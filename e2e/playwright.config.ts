@@ -25,7 +25,7 @@ export default defineConfig({
       command: "npm run start -w @turistero/api",
       url: `${API}/health`,
       reuseExistingServer: false,
-      timeout: 120_000,
+      timeout: 240_000,
       env: { ...secrets, PORT: "4100", ALLOW_DEV_AUTH: "1", ADMIN_EMAILS: "admin@dev.local", CORS_ORIGINS: WEB, CRON_SECRET: "e2e-cron-secret-0123456789", LOG_LEVEL: "warn" },
     },
     {

@@ -24,6 +24,7 @@ export function EventCard({ event, priority = false, fav }: { event: EventItem; 
         )}
         <div className="absolute left-3 top-3 flex gap-1.5">
           {fresh && <span className="rounded-full bg-mango px-2.5 py-1 text-xs font-bold text-ink">🆕 Nuevo</span>}
+          {event.confidence === "LOW" && <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-rose-deep">Por confirmar</span>}
           {event.price.isFree && <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-ink">🆓 Gratis</span>}
         </div>
         {fav?.enabled && (

@@ -6,6 +6,7 @@ import type { DateRangeKey, EventQuery, PriceFilter, SortKey, ViewMode } from "@
 import { CATEGORIES, COUNTRIES, DEFAULT_COUNTRY, getCategory, getPlace, isCategoryId, placesOf } from "@turistero/config";
 import { queryEvents } from "@/lib/events-repo";
 import { getFavoriteState } from "@/lib/favorites";
+import { auth } from "@/auth";
 import { first, href, type Params } from "@/lib/url";
 import { EventCard } from "@/components/event-card";
 import { EventTable } from "@/components/event-table";
@@ -28,6 +29,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
   const range = (["today", "tomorrow", "weekend", "week", "custom"].includes(p.range ?? "") ? p.range : "week") as DateRangeKey;
   const place = p.city ? getPlace(p.city) : undefined;
   const category = isCategoryId(p.category) ? p.category : undefined;
+  const signedIn = (await auth())?.user;
   const cookieView = (await cookies()).get("view")?.value;
   const view: ViewMode = (p.view ?? cookieView) === "list" ? "list" : "cards";
 
@@ -41,8 +43,9 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     price: (["free", "paid"].includes(p.price ?? "") ? p.price : "all") as PriceFilter,
     sort: (["new", "relevance"].includes(p.sort ?? "") ? p.sort : "date") as SortKey,
     q: p.q,
+    mine: p.mine === "1" && !!signedIn,
   };
-  const base: Params = { city: p.city, category: p.category, range: p.range, price: p.price, sort: p.sort, q: p.q, view: p.view };
+  const base: Params = { city: p.city, category: p.category, range: p.range, price: p.price, sort: p.sort, q: p.q, view: p.view, mine: p.mine };
   const where = place?.name ?? COUNTRIES[DEFAULT_COUNTRY]!.name;
 
   return (
@@ -92,6 +95,9 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
             <Chip key={c.id} active={category === c.id} to={href(base, { category: c.id })}>{c.emoji} {c.short}</Chip>
           ))}
           <Chip active={p.price === "free"} to={href(base, { price: p.price === "free" ? undefined : "free" })}>🆓 Gratis</Chip>
+          {signedIn && (
+            <Chip active={!!query.mine} to={href(base, { mine: query.mine ? undefined : "1" })}>⭐ Mi agenda</Chip>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3">

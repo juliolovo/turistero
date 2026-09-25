@@ -30,6 +30,6 @@ if (process.env.ENABLE_LOCAL_CRON === "1") {
   startLocalScheduler({
     log: (m) => console.log(`[cron] ${m}`),
     lastCronRun: async () => (await handle.db.select({ t: discoveryRuns.startedAt }).from(discoveryRuns).where(eq(discoveryRuns.trigger, "CRON")).orderBy(desc(discoveryRuns.startedAt)).limit(1))[0]?.t ?? null,
-    run: () => runDiscovery(deps, "CRON", { skipCheckedWithinHours: 6 }),
+    run: () => runDiscovery(deps, "CRON", { includePrivate: true, skipCheckedWithinHours: 6 }),
   });
 }

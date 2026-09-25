@@ -9,11 +9,11 @@ import { pinoHttp } from "pino-http";
 import type { Db } from "@turistero/db";
 import {
   deleteConnection, listConnections, saveConnection, actOnCandidate, addFavorite, createSavedFilter, deleteSavedFilter, getUser, listSavedFilters, listUsers, setRole, syncUser, createCandidate, createSource, deleteSource, exportSources, getEvent, getSourceRow, importSources,
-  failureStreaks, latestChecks, mergeEvents, listCandidates, listChecks, listEvents, listFavorites, listRuns, listSources, patchSource, removeFavorite, rowToSource, updateEvent,
+  failureStreaks, latestChecks, mergeEvents, createPrivateSource, deletePrivateSource, getOwnedSource, listMySources, mySourceIds, patchPrivateSource, removeSubscription, setSubscription, MAX_PRIVATE_SOURCES, listCandidates, listChecks, listEvents, listFavorites, listRuns, listSources, patchSource, removeFavorite, rowToSource, updateEvent,
 } from "@turistero/db";
 import {
   candidateActionSchema, candidateCreateSchema, eventPatchSchema, eventQuerySchema, favoriteListQuerySchema, importSourcesSchema,
-  paginationSchema, runCreateSchema, connectionCreateSchema, eventFromSchema, savedFilterCreateSchema, userRolePatchSchema, userSyncSchema, sourceCreateSchema, sourceListQuerySchema, sourcePatchSchema,
+  paginationSchema, runCreateSchema, mySourceCreateSchema, mySourcePatchSchema, subscriptionSchema, connectionCreateSchema, eventFromSchema, savedFilterCreateSchema, userRolePatchSchema, userSyncSchema, sourceCreateSchema, sourceListQuerySchema, sourcePatchSchema,
 } from "@turistero/schemas";
 import { CATEGORIES, COUNTRIES, PLACES, FREE_EMOJI, NEW_EMOJI } from "@turistero/config";
 import { authenticate, requireRole, requireService } from "./auth";
@@ -62,10 +62,13 @@ export function createApp({ db, logger, serviceToken, jwtSecret, adminEmails = [
   api.get("/events", async (req, res) => {
     const q = eventQuerySchema.parse(req.query);
     const staff = isStaff(req.user?.role);
-    res.json(await listEvents(db, q, { includeAll: staff }));
+    const viewerId = req.user && req.user.id !== "service" ? req.user.id : undefined;
+    if (q.mine === "true" && !viewerId) throw new HttpError(401, "UNAUTHENTICATED", "Inicia sesión para ver tu agenda");
+    const mineSourceIds = q.mine === "true" ? await mySourceIds(db, viewerId!) : undefined;
+    res.json(await listEvents(db, q, { includeAll: staff && q.mine !== "true", viewerId, mineSourceIds }));
   });
   api.get("/events/:id", async (req, res) => {
-    const e = await getEvent(db, p(req.params.id), { includeAll: isStaff(req.user?.role) });
+    const e = await getEvent(db, p(req.params.id), { includeAll: isStaff(req.user?.role), viewerId: req.user && req.user.id !== "service" ? req.user.id : undefined });
     if (!e) throw notFound("Evento");
     res.json(e);
   });
@@ -144,28 +147,34 @@ export function createApp({ db, logger, serviceToken, jwtSecret, adminEmails = [
     if (created === "exists") throw new HttpError(409, "CONFLICT", "Ya existe una fuente con ese id");
     res.status(201).json(created);
   });
+  // Las fuentes privadas de usuarios no existen para estas rutas (catálogo global): 404 aunque se conozca el id.
+  const globalSource = async (id: string) => {
+    const s = await getSourceRow(db, id);
+    if (!s || s.ownerId) throw notFound("Fuente");
+    return s;
+  };
   api.get("/sources/:id", async (req, res) => {
-    const s = await getSourceRow(db, p(req.params.id));
-    if (!s) throw notFound("Fuente");
+    const s = await globalSource(p(req.params.id));
     res.json(rowToSource(s));
   });
   api.patch("/sources/:id", editor, async (req, res) => {
+    await globalSource(p(req.params.id));
     const s = await patchSource(db, p(req.params.id), sourcePatchSchema.parse(req.body));
     if (!s) throw notFound("Fuente");
     res.json(s);
   });
   api.delete("/sources/:id", admin, async (req, res) => {
+    await globalSource(p(req.params.id));
     if (!(await deleteSource(db, p(req.params.id)))) throw notFound("Fuente");
     res.status(204).end();
   });
   api.post("/sources/:id/check", editor, async (req, res) => {
-    const s = await getSourceRow(db, p(req.params.id));
-    if (!s) throw notFound("Fuente");
+    const s = await globalSource(p(req.params.id));
     res.status(201).json((await checkOne(deps, s)).check);
   });
   api.get("/sources/:id/checks", editor, async (req, res) => {
     const { page, pageSize } = paginationSchema.parse(req.query);
-    if (!(await getSourceRow(db, p(req.params.id)))) throw notFound("Fuente");
+    await globalSource(p(req.params.id));
     res.json(await listChecks(db, p(req.params.id), page, pageSize));
   });
 
@@ -187,6 +196,45 @@ export function createApp({ db, logger, serviceToken, jwtSecret, adminEmails = [
     if (r === "conflict") throw new HttpError(409, "CONFLICT", "El candidato ya fue resuelto o la fuente ya existe");
     if (r === "target-missing") throw new HttpError(422, "TARGET_MISSING", "La fuente destino no existe");
     res.json(r);
+  });
+
+  /* ---------- agenda personal: fuentes propias y suscripciones ---------- */
+  api.get("/my/sources", user, async (req, res) => res.json({ ...(await listMySources(db, req.user!.id)), limit: MAX_PRIVATE_SOURCES }));
+  api.post("/my/sources", user, async (req, res) => {
+    const body = mySourceCreateSchema.parse(req.body);
+    if (!body.urls.website && !body.urls.facebook && !body.urls.instagram && !body.urls.rss) {
+      throw new HttpError(400, "VALIDATION_ERROR", "Agrega al menos un enlace (sitio, Facebook, Instagram o RSS)");
+    }
+    const row = await createPrivateSource(db, req.user!.id, slugify(body.name) || "fuente", body);
+    if (row === "limit") throw new HttpError(409, "LIMIT", `Máximo ${MAX_PRIVATE_SOURCES} fuentes propias`);
+    if (row === "exists") throw new HttpError(409, "CONFLICT", "Ya tienes una fuente con ese nombre");
+    res.status(201).json(rowToSource(row));
+  });
+  api.patch("/my/sources/:id", user, async (req, res) => {
+    const row = await patchPrivateSource(db, req.user!.id, p(req.params.id), mySourcePatchSchema.parse(req.body));
+    if (!row) throw notFound("Fuente");
+    res.json(rowToSource(row));
+  });
+  api.delete("/my/sources/:id", user, async (req, res) => {
+    if (!(await deletePrivateSource(db, req.user!.id, p(req.params.id)))) throw notFound("Fuente");
+    res.status(204).end();
+  });
+  api.post("/my/sources/:id/check", user, async (req, res) => {
+    const s = await getOwnedSource(db, req.user!.id, p(req.params.id));
+    if (!s) throw notFound("Fuente");
+    // Cortesía con los sitios revisados: como máximo una revisión manual cada 5 minutos por fuente.
+    const now = (deps.now ?? (() => new Date()))().getTime();
+    if (s.lastReviewedAt && now - s.lastReviewedAt.getTime() < 5 * 60_000) throw new HttpError(429, "RATE_LIMITED", "Esta fuente se revisó hace menos de 5 minutos");
+    const r = await checkOne(deps, s);
+    res.status(201).json({ ...r.check, newEvents: r.newEvents });
+  });
+  api.put("/my/subscriptions/:sourceId", user, async (req, res) => {
+    if (!(await setSubscription(db, req.user!.id, p(req.params.sourceId), subscriptionSchema.parse(req.body ?? {})))) throw notFound("Fuente del catálogo");
+    res.status(204).end();
+  });
+  api.delete("/my/subscriptions/:sourceId", user, async (req, res) => {
+    if (!(await removeSubscription(db, req.user!.id, p(req.params.sourceId)))) throw notFound("Suscripción");
+    res.status(204).end();
   });
 
   /* ---------- corridas ---------- */
@@ -241,7 +289,7 @@ export function createApp({ db, logger, serviceToken, jwtSecret, adminEmails = [
       throw new HttpError(401, "UNAUTHENTICATED", "Cron no autorizado");
     }
     // Lunes, miércoles y viernes 05:15 America/Managua (11:15 UTC). Las ejecuciones extra continúan lo pendiente.
-    const run = await runDiscovery(deps, "CRON", { skipCheckedWithinHours: 6, budgetMs: Number(process.env.CRON_BUDGET_MS ?? 45_000) });
+    const run = await runDiscovery(deps, "CRON", { includePrivate: true, skipCheckedWithinHours: 6, budgetMs: Number(process.env.CRON_BUDGET_MS ?? 45_000) });
     res.json(run);
   });
 

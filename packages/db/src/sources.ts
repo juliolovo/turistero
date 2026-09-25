@@ -136,8 +136,8 @@ export async function listRuns(db: Db, page: number, pageSize: number): Promise<
   return { items: rows, page, pageSize, total: c[0]?.n ?? 0 };
 }
 
-export async function listActiveSources(db: Db, ids?: string[], opts: { staleBefore?: Date } = {}): Promise<SourceRow[]> {
-  let rows = await db.select().from(sources).where(and(isNull(sources.ownerId), eq(sources.active, true))).orderBy(desc(sources.priority));
+export async function listActiveSources(db: Db, ids?: string[], opts: { staleBefore?: Date; includePrivate?: boolean } = {}): Promise<SourceRow[]> {
+  let rows = await db.select().from(sources).where(and(opts.includePrivate ? undefined : isNull(sources.ownerId), eq(sources.active, true))).orderBy(desc(sources.priority));
   if (ids?.length) rows = rows.filter((r) => ids.includes(r.id));
   if (opts.staleBefore) {
     const t = opts.staleBefore.getTime();

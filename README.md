@@ -86,6 +86,12 @@ Auth.js v5, sesión JWT. En cada login la web llama a `/api/internal/users/sync`
 - **Desarrollo sin credenciales**: `ALLOW_DEV_LOGIN=1` (web) + `ALLOW_DEV_AUTH=1` (API) habilita “Entrar como usuario de prueba”; el usuario `admin` es ADMIN si `ADMIN_EMAILS=admin@dev.local`. Ignorados en producción.
 - Si la API ya no reconoce la cookie (BD reiniciada), la web cierra la sesión sola (`/auth/expired`).
 
+## Mis fuentes y mi agenda (`/my`)
+Cada usuario arma su propia lista: **fuentes propias** (pega el sitio, RSS, Facebook o Instagram de una operadora; máx. 50) y **suscripciones** a fuentes del catálogo compartido. En la home, el chip **⭐ Mi agenda** (`?mine=1`) muestra solo lo de esas fuentes.
+- Lo que se descubre en una fuente propia es **privado**: solo lo ve su dueño (ni el personal de moderación lo lista). Si una fuente del catálogo encuentra después el mismo evento, se hace público; una fuente privada nunca se añade a un evento público. Al eliminar la fuente se van sus eventos privados.
+- Las fuentes privadas no aparecen en el catálogo, ni en el export, ni son accesibles por id (404). Revisión manual limitada a una cada 5 min por fuente; el cron también las revisa.
+- Limitación actual: Facebook/Instagram de fuentes propias usan la conexión de Meta del administrador (`/admin/connections`); hasta que exista esa conexión quedan `AUTH_REQUIRED`. Sitios web y RSS funcionan ya. Una conexión de Meta por usuario requiere el flujo OAuth (App Review).
+
 ## Administración (`/admin`, EDITOR+)
 Resumen · **Fuentes** (editar, activar/desactivar, revisar ahora, abrir Facebook/Instagram, eliminar (ADMIN), historial, import/export) · **Estado de fuentes** (`/admin/sources/status`: última revisión, publicaciones revisadas, eventos, motivo; racha de fallos) · **Candidatos** (aprobar, rechazar, fusionar sin pisar URLs) · **Eventos** (aprobar, ocultar, editar, fusionar duplicados) · **Agregar evento** (URL o texto) · **Corridas** (`/admin/runs`, *Ejecutar búsqueda ahora*) · Usuarios y Conexiones Meta (ADMIN).
 
@@ -110,6 +116,6 @@ Auth de la API: `Bearer $API_SERVICE_TOKEN` (servidor a servidor), `Bearer <JWT>
 ## Pendiente
 - Flujo OAuth “Conectar Meta” en la UI (requiere App Review y confirmar scopes vigentes) y proveedor real para `SearchAdapter`.
 - Investigar Instagram/web oficiales de las fuentes sin URLs y verificar sus vínculos.
-- Fuentes privadas por usuario y su lista personal (`user_source` ya existe en el esquema; falta UI/API) y más países/ciudades.
+- Conexión de Meta por usuario (hoy se usa la del administrador) y más países/ciudades (el catálogo de lugares aún es solo Nicaragua).
 - Recomendaciones más allá de “También podría interesarte” (por ahora: recencia + ciudad).
 - Paginación en la home (hoy hasta 100 eventos) y caché de listados en producción.

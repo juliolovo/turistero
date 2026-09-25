@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, exists, gte, inArray, lt, ne, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, exists, gte, inArray, isNull, lt, ne, or, sql, type SQL } from "drizzle-orm";
 import type { EventItem } from "@turistero/types";
 import { CATEGORIES, PLACES, getPlace, placesOf, resolveRange } from "@turistero/config";
 import type { EventQueryInput, Page } from "@turistero/schemas";
@@ -61,7 +61,16 @@ export function tzFor(country: string, city?: string): string {
   return (city && getPlace(city)?.timezone) || placesOf(country)[0]?.timezone || "UTC";
 }
 
-export async function listEvents(db: Db, q: EventQueryInput, opts: { includeAll?: boolean; now?: Date } = {}): Promise<Page<EventItem>> {
+export interface ListOpts {
+  includeAll?: boolean;
+  now?: Date;
+  /** Usuario que consulta: además de lo público ve sus eventos privados. */
+  viewerId?: string;
+  /** Agenda personal: solo eventos de estas fuentes (privadas + suscritas) o propios. */
+  mineSourceIds?: string[];
+}
+
+export async function listEvents(db: Db, q: EventQueryInput, opts: ListOpts = {}): Promise<Page<EventItem>> {
   const now = opts.now ?? new Date();
   const country = q.country ?? "NI";
   const range = resolveRange(q.range, now, tzFor(country, q.city), { from: q.from, to: q.to });
@@ -70,8 +79,24 @@ export async function listEvents(db: Db, q: EventQueryInput, opts: { includeAll?
   if (opts.includeAll) {
     if (q.status) where.push(eq(events.status, q.status));
     if (q.confidence) where.push(eq(events.confidence, q.confidence));
+    // Ni siquiera el personal de moderación ve los eventos privados de otros usuarios.
+    where.push(opts.viewerId ? or(isNull(events.ownerId), eq(events.ownerId, opts.viewerId)) : isNull(events.ownerId));
   } else {
-    where.push(eq(events.status, "PUBLISHED"), ne(events.confidence, "LOW")); // el público solo ve HIGH/MEDIUM
+    // Público: PUBLISHED con confianza HIGH/MEDIUM. Los eventos de fuentes privadas los ve solo su dueño (también los LOW, rotulados).
+    const publicCond = and(eq(events.status, "PUBLISHED"), ne(events.confidence, "LOW"), isNull(events.ownerId));
+    const ownCond = opts.viewerId ? and(eq(events.ownerId, opts.viewerId), ne(events.status, "HIDDEN")) : undefined;
+    where.push(or(publicCond, ownCond));
+  }
+  if (opts.mineSourceIds) {
+    const own = opts.viewerId ? eq(events.ownerId, opts.viewerId) : undefined;
+    where.push(
+      or(
+        own,
+        opts.mineSourceIds.length
+          ? exists(db.select({ x: sql`1` }).from(eventSources).where(and(eq(eventSources.eventId, events.id), inArray(eventSources.sourceId, opts.mineSourceIds))))
+          : undefined,
+      ),
+    );
   }
   if (q.city) where.push(eq(events.placeId, q.city));
   if (q.category) where.push(eq(events.category, q.category));
@@ -111,9 +136,10 @@ export async function listEvents(db: Db, q: EventQueryInput, opts: { includeAll?
   return { items: await hydrate(db, rows), page: q.page, pageSize: q.pageSize, total: count[0]?.n ?? 0 };
 }
 
-export async function getEvent(db: Db, idOrSlug: string, opts: { includeAll?: boolean } = {}): Promise<EventItem | null> {
+export async function getEvent(db: Db, idOrSlug: string, opts: { includeAll?: boolean; viewerId?: string } = {}): Promise<EventItem | null> {
   const [row] = await db.select().from(events).where(or(eq(events.id, idOrSlug), eq(events.slug, idOrSlug))).limit(1);
   if (!row || (!opts.includeAll && row.status !== "PUBLISHED")) return null;
+  if (row.ownerId && row.ownerId !== opts.viewerId) return null; // evento privado de otro usuario (incluye al personal de moderación)
   return (await hydrate(db, [row]))[0] ?? null;
 }
 
@@ -147,7 +173,7 @@ export async function listFavorites(db: Db, userId: string, page: number, pageSi
 }
 
 export async function addFavorite(db: Db, userId: string, eventId: string): Promise<boolean> {
-  const ev = await getEvent(db, eventId);
+  const ev = await getEvent(db, eventId, { viewerId: userId });
   if (!ev) return false;
   await db.insert(favorites).values({ userId, eventId: ev.id }).onConflictDoNothing();
   return true;

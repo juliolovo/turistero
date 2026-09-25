@@ -96,5 +96,7 @@ export interface EventQuery {
   price?: PriceFilter;
   sort?: SortKey;
   q?: string;
+  /** Agenda personal (fuentes propias + suscritas). Requiere sesión. */
+  mine?: boolean;
   limit?: number;
 }

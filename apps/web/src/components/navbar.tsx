@@ -30,6 +30,7 @@ export async function Navbar() {
               {l.label}
             </Link>
           ))}
+          {user && <Link href="/my" className="rounded-full px-3 py-1.5 text-sm text-white/85 transition hover:bg-white/10 hover:text-white">Mis fuentes</Link>}
           {staff && (
             <Link href="/admin" className="rounded-full px-3 py-1.5 text-sm text-mango transition hover:bg-white/10">Admin</Link>
           )}
@@ -61,6 +62,7 @@ export async function Navbar() {
             {l.label}
           </Link>
         ))}
+        {user && <Link href="/my" className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-sm">Mis fuentes</Link>}
         {staff && <Link href="/admin" className="shrink-0 rounded-full bg-mango px-3 py-1 text-sm text-ink">Admin</Link>}
       </nav>
     </header>

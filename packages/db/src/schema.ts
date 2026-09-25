@@ -193,6 +193,8 @@ export const events = pgTable(
     confidence: confidenceEnum("confidence").notNull(),
     status: eventStatusEnum("status").notNull().default("PENDING"),
     isMock: boolean("is_mock").notNull().default(false),
+    /** null => evento público. Con valor: descubierto solo por una fuente privada de ese usuario; solo él lo ve. */
+    ownerId: text("owner_id").references(() => users.id, { onDelete: "cascade" }),
     dedupeKey: text("dedupe_key"),
     discoveredAt: ts("discovered_at").notNull().defaultNow(),
     lastVerifiedAt: ts("last_verified_at").notNull().defaultNow(),

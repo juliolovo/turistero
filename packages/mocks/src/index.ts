@@ -7,14 +7,14 @@ import { getPlace, startOfDayUtc, zonedParts, zonedTimeToUtc } from "@turistero/
  * Las fechas son relativas a "hoy" para que la demo siempre muestre los próximos 7 días.
  */
 
-const PROFILES: Record<string, { name: string; platform: SourcePlatform; url: string }> = {
-  rkr: { name: "Ron Kon Rolas", platform: "facebook", url: "https://www.facebook.com/ronkonrolas.bar.en.managua" },
-  rutasegura: { name: "Ruta Segura Nicaragua", platform: "facebook", url: "https://www.facebook.com/rutasegurani" },
-  finding: { name: "Finding Adventure", platform: "facebook", url: "https://www.facebook.com/finding.adventure" },
-  wander: { name: "Wanderlust Nica", platform: "facebook", url: "https://www.facebook.com/wanderlustNica" },
-  nicaroad: { name: "NicaRoad", platform: "facebook", url: "https://www.facebook.com/NicaRoad" },
-  tnrd: { name: "Teatro Nacional Rubén Darío", platform: "facebook", url: "https://www.facebook.com/tnrd.oficial" },
-  demo: { name: "Fuente de ejemplo", platform: "manual", url: "" },
+const PROFILES: Record<string, { id: string; name: string; platform: SourcePlatform; url: string }> = {
+  rkr: { id: "ron-kon-rolas", name: "Ron Kon Rolas", platform: "facebook", url: "https://www.facebook.com/ronkonrolas.bar.en.managua" },
+  rutasegura: { id: "ruta-segura-nicaragua", name: "Ruta Segura Nicaragua", platform: "facebook", url: "https://www.facebook.com/rutasegurani" },
+  finding: { id: "finding-adventures-nicaragua", name: "Finding Adventure", platform: "facebook", url: "https://www.facebook.com/finding.adventure" },
+  wander: { id: "wanderlust-travel", name: "Wanderlust Nica", platform: "facebook", url: "https://www.facebook.com/wanderlustNica" },
+  nicaroad: { id: "nicaroad", name: "NicaRoad", platform: "facebook", url: "https://www.facebook.com/NicaRoad" },
+  tnrd: { id: "teatro-nacional-ruben-dario", name: "Teatro Nacional Rubén Darío", platform: "facebook", url: "https://www.facebook.com/tnrd.oficial" },
+  demo: { id: "demo", name: "Fuente de ejemplo", platform: "manual", url: "" },
 };
 
 interface Seed {
@@ -75,7 +75,7 @@ export function buildMockEvents(now: Date = new Date()): EventItem[] {
     const start = zonedTimeToUtc(base.y, base.m, base.d + s.day, h, mi, place.timezone);
     const p = PROFILES[s.src]!;
     const source: EventSourceRef = {
-      sourceId: s.src,
+      sourceId: p.id, // mismo id que el catálogo (config/sources.json): así "Mi agenda" funciona con los datos de ejemplo
       sourceName: p.name,
       platform: p.platform,
       urlKind: "PROFILE_URL",

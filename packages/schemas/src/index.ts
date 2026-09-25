@@ -38,6 +38,7 @@ export const eventQuerySchema = paginationSchema.extend({
   price: z.enum(["all", "free", "paid"]).default("all"),
   sort: z.enum(["date", "new", "relevance"]).default("date"),
   q: z.string().trim().max(100).optional(),
+  mine: z.enum(["true", "false"]).optional(), // agenda personal (requiere sesión)
   status: eventStatusSchema.optional(), // solo EDITOR/ADMIN
   confidence: confidenceSchema.optional(), // solo EDITOR/ADMIN
 });
@@ -186,3 +187,28 @@ export const connectionCreateSchema = z.object({
   scope: z.string().max(500).optional(),
   expiresAt: z.iso.datetime().nullish(),
 });
+
+/* ---------- agenda personal ---------- */
+export const mySourceCreateSchema = z.object({
+  name: z.string().min(1).max(120),
+  type: sourceTypeSchema.default("tour-operator"),
+  country: z.string().length(2).default("NI"),
+  city: z.string().min(1).max(60).nullable().default(null),
+  categories: z.array(z.string().min(1)).max(10).default([]),
+  aliases: z.array(z.string().min(1).max(120)).max(10).default([]),
+  urls: sourceUrlsSchema.default({ website: null, facebook: null, instagram: null, tiktok: null }),
+  notes: z.string().max(500).default(""),
+});
+export const mySourcePatchSchema = z
+  .object({
+    name: z.string().min(1).max(120),
+    type: sourceTypeSchema,
+    city: z.string().min(1).max(60).nullable(),
+    categories: z.array(z.string().min(1)).max(10),
+    aliases: z.array(z.string().min(1).max(120)).max(10),
+    urls: z.object({ website: urlOrNull, facebook: urlOrNull, instagram: urlOrNull, tiktok: urlOrNull, rss: urlOrNull.optional() }),
+    notes: z.string().max(500),
+    active: z.boolean(),
+  })
+  .partial();
+export const subscriptionSchema = z.object({ enabled: z.boolean().optional(), alias: z.string().trim().max(80).nullable().optional() });

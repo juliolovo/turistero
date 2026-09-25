@@ -1,4 +1,4 @@
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, eq, gte, isNull, lt, or } from "drizzle-orm";
 import { PLACES, dayKey, getPlace, placesOf } from "@turistero/config";
 import { checkSourceContent, createSafeFetcher, defaultAdapters, newLinksOnly, type Credential, type DiscoverySource, type SafeFetcher, type SourceAdapter } from "@turistero/discovery";
 import { dedupeKey, extractCandidate, fold, isDuplicate, slugify, type EventCandidate, type SourceContent } from "@turistero/event-parser";
@@ -49,14 +49,17 @@ async function loadCredentials(db: Db): Promise<{ facebook?: Credential & { conn
 export async function persistCandidate(
   db: Db,
   c: EventCandidate,
-  opts: { sourceName: string; publishLow?: boolean; publishAll?: boolean },
+  opts: { sourceName: string; publishLow?: boolean; publishAll?: boolean; ownerId?: string | null },
 ): Promise<{ id: string; created: boolean; slug: string; status: string }> {
   const place = getPlace(c.placeId)!;
   const tz = place.timezone;
   const day = dayKey(c.startsAt.toISOString(), tz);
   const lo = new Date(c.startsAt.getTime() - 36 * 3_600_000);
   const hi = new Date(c.startsAt.getTime() + 36 * 3_600_000);
-  const nearby = await db.select().from(events).where(and(eq(events.placeId, c.placeId), gte(events.startsAt, lo), lt(events.startsAt, hi)));
+  const owner = opts.ownerId ?? null;
+  // Un candidato privado solo se compara con eventos públicos o del mismo dueño; uno público, con cualquiera.
+  const visible = owner ? or(isNull(events.ownerId), eq(events.ownerId, owner)) : undefined;
+  const nearby = await db.select().from(events).where(and(eq(events.placeId, c.placeId), gte(events.startsAt, lo), lt(events.startsAt, hi), visible));
 
   const match = nearby.find((e) =>
     isDuplicate(
@@ -76,10 +79,15 @@ export async function persistCandidate(
     profileUrl: c.profileUrl,
   };
 
+  if (match && owner && !match.ownerId) {
+    // Ya es un evento público: una fuente privada no se añade (no se revela ni se expone en una página pública).
+    return { id: match.id, created: false, slug: match.slug, status: match.status };
+  }
   if (match) {
     // Mismo evento visto en otra fuente: se agrega la fuente, no se crea un duplicado ni se pierde la alternativa.
     await db.insert(eventSources).values({ eventId: match.id, ...srcRow }).onConflictDoNothing();
     const patch: Partial<typeof events.$inferInsert> = { lastVerifiedAt: new Date() };
+    if (match.ownerId && !owner) patch.ownerId = null; // una fuente pública lo encontró: deja de ser privado
     if (!match.image && c.image) patch.image = { url: c.image.url, source: c.image.source };
     if (match.venueName === "Lugar por confirmar" && c.venue !== "Lugar por confirmar") patch.venueName = c.venue;
     await db.update(events).set(patch).where(eq(events.id, match.id));
@@ -96,7 +104,7 @@ export async function persistCandidate(
     venueName: c.venue, organizerName: c.organizer ?? null, placeId: c.placeId, country: place.country, address: c.address ?? null, lat: c.lat ?? null, lng: c.lng ?? null,
     isFree: c.price.isFree, currency: c.price.currency ?? null, priceMin: c.price.min ?? null, priceMax: c.price.max ?? null, priceNote: c.price.note ?? null,
     image: c.image ? { url: c.image.url, source: c.image.source } : null,
-    confidence: c.confidence, status, isMock: false,
+    confidence: c.confidence, status, isMock: false, ownerId: owner,
     dedupeKey: dedupeKey({ title: c.title, dayKey: day, venue: c.venue }), discoveredAt: c.discoveredAt, lastVerifiedAt: c.discoveredAt,
   });
   await db.insert(eventSources).values({ eventId: id, ...srcRow });
@@ -140,12 +148,12 @@ export async function checkOne(deps: DiscoveryDeps, s: SourceRow, runId?: string
   const cands = candidatesFromContents(result.contents, s, now);
   let created = 0;
   for (const c of cands) {
-    const r = await persistCandidate(db, c, { sourceName: s.name });
+    const r = await persistCandidate(db, c, { sourceName: s.name, ownerId: s.ownerId, publishLow: !!s.ownerId });
     if (r.created) created++;
   }
 
   // Fuentes nuevas sugeridas por lo que apareció en la revisión (nunca se aprueban solas).
-  if (result.discoveredLinks?.length) {
+  if (result.discoveredLinks?.length && !s.ownerId) {
     const known = await db.select({ urls: sources.urls }).from(sources);
     const pending = await db.select({ urls: sourceCandidates.urls }).from(sourceCandidates);
     for (const l of newLinksOnly(result.discoveredLinks.filter((x) => x.platform !== "website"), [...known, ...pending])) {
@@ -173,6 +181,8 @@ export interface RunOptions {
   startedBy?: string;
   /** Solo fuentes no revisadas en las últimas N horas (las corridas de cron se continúan solas). */
   skipCheckedWithinHours?: number;
+  /** Incluir las fuentes privadas de los usuarios (cron). Las corridas manuales del admin solo revisan el catálogo global. */
+  includePrivate?: boolean;
   /** Presupuesto de tiempo: al agotarse se detiene y el resto queda para la siguiente ejecución. */
   budgetMs?: number;
 }
@@ -181,7 +191,7 @@ export async function runDiscovery(deps: DiscoveryDeps, trigger: "CRON" | "MANUA
   const { db } = deps;
   const run = await createRun(db, trigger, opts.startedBy);
   const now = (deps.now ?? (() => new Date()))();
-  const srcs = await listActiveSources(db, opts.sourceIds, { staleBefore: opts.skipCheckedWithinHours ? new Date(now.getTime() - opts.skipCheckedWithinHours * 3_600_000) : undefined });
+  const srcs = await listActiveSources(db, opts.sourceIds, { includePrivate: opts.includePrivate, staleBefore: opts.skipCheckedWithinHours ? new Date(now.getTime() - opts.skipCheckedWithinHours * 3_600_000) : undefined });
   const t0 = Date.now();
   let found = 0, fresh = 0, errors = 0, checked = 0;
   for (const s of srcs) {

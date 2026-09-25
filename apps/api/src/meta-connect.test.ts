@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { eq } from "drizzle-orm";
-import { connections, createDb, getCredential, notifications, type DbHandle } from "@turistero/db";
+import { connections, getCredential, notifications, type DbHandle } from "@turistero/db";
+import { createTestDb } from "@turistero/db/src/testing";
 import { createApp } from "./app";
 import { warnExpiringConnections } from "./tick";
 
@@ -40,7 +41,7 @@ let app: ReturnType<typeof createApp>;
 
 beforeAll(async () => {
   Object.assign(process.env, { META_APP_ID: APP_ID, META_APP_SECRET: APP_SECRET, TOKEN_ENCRYPTION_KEY: "clave-de-prueba-suficientemente-larga" });
-  handle = await createDb({ migrate: true });
+  handle = await createTestDb();
   app = createApp({ db: handle.db, allowDevAuth: true, metaFetch, logger: (await import("pino")).pino({ level: "silent" }) });
 }, 60_000);
 afterAll(() => handle.close());

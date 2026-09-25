@@ -44,9 +44,10 @@ jobs:
           cache: npm
       - run: npm ci
       # Las migraciones son aditivas (drizzle-kit generate). Revisa packages/db/drizzle antes de mezclar a main.
+      # DDL con el rol ADMINISTRADOR (DATABASE_ADMIN_URL). La API en Vercel usa el rol de la aplicación (solo filas): docs/DATABASE.md
       - run: npm run db:migrate
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_ADMIN_URL: ${{ secrets.DATABASE_ADMIN_URL }}
 
   deploy-api:
     name: Desplegar API (Vercel)

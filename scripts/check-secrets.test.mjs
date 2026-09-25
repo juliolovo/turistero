@@ -33,6 +33,10 @@ test("detecta URLs de base de datos con contraseña real, no las de ejemplo", ()
   assert.deepEqual(rules("src/db.ts", "postgres://admin:Sup3rS3creta123@ep-cool.neon.tech/db"), ["URL de base de datos con contraseña"]);
   assert.deepEqual(rules(".env.example", "DATABASE_URL=postgres://user:pass@host/db"), []);
   assert.deepEqual(rules("README.md", "postgres://usuario:TU-CONTRASENA@host/db"), []);
+  // BD local de desarrollo (contenedor): no es un secreto; una remota con la misma contraseña sí
+  assert.deepEqual(rules("docs/x.md", "postgres://turistero_app_usr:turistero_app_pwd@127.0.0.1:5433/turistero_db_dev"), []);
+  assert.deepEqual(rules("docs/x.md", "postgres://app:Sup3rS3creta123@localhost:5432/db"), []);
+  assert.deepEqual(rules("docs/x.md", "postgres://turistero_app_usr:turistero_app_pwd@ep-cool.neon.tech/db"), ["URL de base de datos con contraseña"]);
 });
 
 test("detecta asignaciones de secretos en código y .env, pero no referencias ni ejemplos", () => {

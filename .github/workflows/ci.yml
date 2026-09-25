@@ -32,6 +32,21 @@ jobs:
       - name: Build de la función serverless de la API
         run: npm run build:vercel -w @turistero/api
 
+  postgres:
+    name: Pruebas contra Postgres real (roles y API)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Levanta el Postgres de docker-compose (credenciales locales por defecto) y corre pruebas de roles + API completa
+      - run: npm run test:pg
+
   e2e:
     name: E2E (Playwright + Chrome)
     runs-on: ubuntu-latest

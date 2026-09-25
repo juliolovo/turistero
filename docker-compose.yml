@@ -1,0 +1,34 @@
+# Postgres LOCAL para desarrollo y pruebas (nunca para producción).
+#   npm run db:up      levanta el contenedor y crea la BD + los dos roles
+#   npm run db:reset   lo destruye y lo vuelve a crear desde cero
+#
+# Las contraseñas de abajo son valores por defecto SOLO para este contenedor local, que escucha únicamente en 127.0.0.1.
+# En Neon/Supabase/producción usa contraseñas largas y aleatorias generadas por ti (ver docs/DATABASE.md): NUNCA estas.
+# Puedes sobrescribirlas con un archivo `.env` junto a este (ignorado por Git).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: turistero-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${PG_SUPERUSER_PASSWORD:-turistero_postgres_pwd}
+      POSTGRES_DB: ${DB_NAME:-turistero_db_dev}
+      ADMIN_DB_USER: ${ADMIN_DB_USER:-turistero_admin_usr}
+      ADMIN_DB_PASSWORD: ${ADMIN_DB_PASSWORD:-turistero_admin_pwd}
+      APP_DB_USER: ${APP_DB_USER:-turistero_app_usr}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-turistero_app_pwd}
+    ports:
+      - "127.0.0.1:${PG_PORT:-5433}:5432" # solo accesible desde tu máquina
+    volumes:
+      - turistero_pgdata:/var/lib/postgresql/data
+      - ./packages/db/sql:/sql:ro
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${DB_NAME:-turistero_db_dev}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  turistero_pgdata:

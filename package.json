@@ -22,7 +22,12 @@
     "meta:token": "npm run token -w @turistero/meta-app --",
     "prepare": "node scripts/install-hooks.mjs",
     "secrets:check": "node scripts/check-secrets.mjs --all",
-    "secrets:history": "node scripts/check-secrets.mjs --all --history"
+    "secrets:history": "node scripts/check-secrets.mjs --all --history",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d --wait",
+    "db:psql": "docker compose exec postgres psql -U postgres -d turistero_db_dev",
+    "test:pg": "node scripts/test-postgres.mjs"
   },
   "engines": {
     "node": ">=20"

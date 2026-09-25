@@ -1,0 +1,6 @@
+* text=auto
+# Estos archivos se ejecutan en contenedores Linux: siempre con saltos de línea LF (CRLF los rompe)
+*.sh text eol=lf
+*.sql text eol=lf
+docker/** text eol=lf
+.githooks/* text eol=lf

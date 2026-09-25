@@ -38,6 +38,8 @@ npm run api        # API en :4000 (PGlite + semilla de fuentes y eventos de ejem
 npm run dev        # web en :3000 (lee apps/web/.env.local)
 npm test           # unit + integración (config, event-parser, discovery, API)
 npm run typecheck
+npm run db:up       # Postgres local en Docker (BD turistero_db_dev, roles admin y app) — ver docs/DATABASE.md
+npm run test:pg    # pruebas de roles + API completa contra Postgres real (Docker)
 npm run e2e        # Playwright con Chrome instalado; levanta API :4100 y web :3100
 npm run meta:check # verifica tu token y tu Meta App (solo lectura; ver meta-app/README.md)
 ```

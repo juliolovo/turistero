@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { eq } from "drizzle-orm";
-import { connections, createDb, seedSources, type DbHandle } from "@turistero/db";
+import { connections, seedSources, type DbHandle } from "@turistero/db";
+import { createTestDb } from "@turistero/db/src/testing";
 import { createSafeFetcher } from "@turistero/discovery";
 import { createApp } from "./app";
 
@@ -29,7 +30,7 @@ let app: ReturnType<typeof createApp>;
 
 beforeAll(async () => {
   process.env.TOKEN_ENCRYPTION_KEY = "clave-de-prueba-suficientemente-larga";
-  handle = await createDb({ migrate: true });
+  handle = await createTestDb();
   await seedSources(handle.db);
   app = createApp({
     db: handle.db, allowDevAuth: true, now: () => new Date(NOW.getTime() + tickCount++ * 1000), // reloj que avanza: evita empates entre revisiones

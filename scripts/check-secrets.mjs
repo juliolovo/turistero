@@ -82,7 +82,8 @@ export function scanText(filePath, text) {
       if (m) add(name, m[0]);
     }
     const db = DB_URL.exec(raw);
-    if (db && !looksPlaceholder(db[2]) && !looksPlaceholder(db[1] + ":" + db[2])) add("URL de base de datos con contraseña", db[2]);
+    const localHost = /^(?:localhost|127\.0\.0\.1|\[::1\]|host\.docker\.internal|postgres)(?::\d+)?$/i.test(db?.[3] ?? ""); // contenedor/BD local de desarrollo: no es un secreto
+    if (db && !localHost && !looksPlaceholder(db[2]) && !looksPlaceholder(db[1] + ":" + db[2])) add("URL de base de datos con contraseña", db[2]);
 
     const a = ASSIGN.exec(raw);
     if (a) {

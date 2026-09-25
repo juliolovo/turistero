@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
-import { createDb, seedMockEvents, seedSources, type DbHandle } from "@turistero/db";
+import { seedMockEvents, seedSources, type DbHandle } from "@turistero/db";
+import { createTestDb } from "@turistero/db/src/testing";
 import { createApp } from "./app";
 
 let handle: DbHandle;
@@ -10,7 +11,7 @@ const admin = { "x-dev-user": "admin1:ADMIN" };
 const user = { "x-dev-user": "user1:USER" };
 
 beforeAll(async () => {
-  handle = await createDb({ migrate: true }); // PGlite en memoria
+  handle = await createTestDb(); // PGlite en memoria
   await seedSources(handle.db);
   await seedMockEvents(handle.db);
   app = createApp({ db: handle.db, allowDevAuth: true, logger: (await import("pino")).pino({ level: "silent" }) });

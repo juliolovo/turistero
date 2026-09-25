@@ -2,7 +2,8 @@ import { createHmac } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { eq } from "drizzle-orm";
-import { accounts, connections, createDb, passwordProblems, saveConnection, users, verifyPassword, hashPassword, type DbHandle } from "@turistero/db";
+import { accounts, connections, passwordProblems, saveConnection, users, verifyPassword, hashPassword, type DbHandle } from "@turistero/db";
+import { createTestDb } from "@turistero/db/src/testing";
 import { createApp } from "./app";
 import { parseSignedRequest } from "./meta-callbacks";
 
@@ -20,7 +21,7 @@ beforeAll(async () => {
   process.env.META_APP_SECRET = APP_SECRET;
   process.env.TOKEN_ENCRYPTION_KEY = "clave-de-prueba-suficientemente-larga";
   process.env.NEXT_PUBLIC_SITE_URL = "https://turistero.example";
-  handle = await createDb({ migrate: true });
+  handle = await createTestDb();
   app = createApp({ db: handle.db, serviceToken: SERVICE, logger: (await import("pino")).pino({ level: "silent" }) });
 }, 60_000);
 afterAll(() => handle.close());

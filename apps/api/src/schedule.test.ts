@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { eq } from "drizzle-orm";
-import { checkDecision, createDb, seedSources, sources, type DbHandle } from "@turistero/db";
+import { checkDecision, seedSources, sources, type DbHandle } from "@turistero/db";
+import { createTestDb } from "@turistero/db/src/testing";
 import { createSafeFetcher } from "@turistero/discovery";
 import { createApp } from "./app";
 import { isDueToday, userDue } from "./tick";
@@ -82,7 +83,7 @@ const notifs = (who: Record<string, string>) => request(app).get("/api/my/notifi
 
 beforeAll(async () => {
   process.env.CRON_SECRET = "cron-secret-de-prueba-1234567890";
-  handle = await createDb({ migrate: true });
+  handle = await createTestDb();
   await seedSources(handle.db);
   app = createApp({
     db: handle.db, allowDevAuth: true, now: () => clock,

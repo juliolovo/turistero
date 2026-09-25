@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { SignJWT } from "jose";
-import { createDb, seedMockEvents, type DbHandle } from "@turistero/db";
+import { seedMockEvents, type DbHandle } from "@turistero/db";
+import { createTestDb } from "@turistero/db/src/testing";
 import { createApp } from "./app";
 
 const SECRET = "test-secret-test-secret-test-secret-0123";
@@ -22,7 +23,7 @@ const sync = (body: object) => request(app).post("/api/internal/users/sync").set
 const bearer = async (sub: string) => ({ authorization: `Bearer ${await sign(sub)}` });
 
 beforeAll(async () => {
-  handle = await createDb({ migrate: true });
+  handle = await createTestDb();
   await seedMockEvents(handle.db);
   app = createApp({
     db: handle.db,

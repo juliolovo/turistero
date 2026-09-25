@@ -17,6 +17,8 @@ Planificador: Vercel Cron diario (apps/api/vercel.json)  +  GitHub Actions cada 
 Web y API son **dos proyectos de Vercel del mismo repositorio**. La web habla con la API por HTTPS; la API es la única que toca la base de datos.
 
 ## 1. Base de datos en Neon
+> **Roles de la base de datos:** la API usa un rol de solo filas (`DATABASE_URL`) y las migraciones un rol administrador (`DATABASE_ADMIN_URL`). Sigue [`DATABASE.md`](DATABASE.md) (crea el rol con `packages/db/sql/02-app-role.sql`); esta sección es un resumen.
+
 1. <https://neon.tech> → crear proyecto (elige región cercana a tus funciones de Vercel, p. ej. `us-east-1`).
 2. Copia la **connection string *pooled*** (host con `-pooler`) → será `DATABASE_URL`. Debe terminar en `?sslmode=require`.
 3. Desde tu máquina, una sola vez:
@@ -97,7 +99,7 @@ Archivos en `.github/workflows/`:
 | `deploy.yml` | push a `main` / manual, **solo si `DEPLOY_ENABLED=true`** | verifica → migra Neon → despliega API → despliega web |
 | `scheduled-discovery.yml` | cada hora, **solo si `DISCOVERY_CRON_ENABLED=true`** | llama al planificador |
 
-**Secretos** (*Settings → Secrets and variables → Actions → Secrets*): `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID_API`, `VERCEL_PROJECT_ID_WEB`, `DATABASE_URL`, `CRON_SECRET`.
+**Secretos** (*Settings → Secrets and variables → Actions → Secrets*): `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID_API`, `VERCEL_PROJECT_ID_WEB`, `DATABASE_ADMIN_URL`, `CRON_SECRET`.
 **Variables:** `DEPLOY_ENABLED`, `DISCOVERY_CRON_ENABLED`, `API_URL`.
 Obtén los ids con `npx vercel link` dentro de cada app (archivo `.vercel/project.json`) o en *Project Settings → General*. El token en <https://vercel.com/account/tokens>.
 

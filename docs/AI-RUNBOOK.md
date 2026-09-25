@@ -17,7 +17,7 @@ Leyenda: 🧑 = solo un humano puede hacerlo (pídeselo y espera) · 🤖 = lo p
 |---|---|---|
 | Dominio de la web | `turistero.com` | `NEXT_PUBLIC_SITE_URL`, redirects OAuth |
 | Dominio de la API | `api.turistero.com` | `API_URL`, callbacks de Meta |
-| Proveedor de BD | `neon` (recomendado) o `supabase` | ver `docs/DATABASE.md` |
+| Proveedor de BD | `neon` (recomendado) o `supabase` | ver `docs/DATABASE.md` (roles admin/app) |
 | Correo del administrador | (Gmail/Apple verificado) | `ADMIN_EMAILS` (⚠️ es dato personal: va en variables de Vercel, no en Git) |
 | Correo de contacto público | | `NEXT_PUBLIC_CONTACT_EMAIL` |
 | ¿Qué proveedores de login? | google, meta, microsoft, apple | ver `docs/AUTH.md` |
@@ -35,13 +35,22 @@ npm run secrets:history            # ✅ sin secretos en el historial
 ```
 Si algo falla: ⛔ corrige antes de desplegar.
 
-## 4. Base de datos
-Sigue `docs/DATABASE.md`.
-1. 🧑 Crea el proyecto en Neon (recomendado) o Supabase y obtén la **cadena con pooler**.
-2. 🧑 Exporta la cadena en tu terminal sin mostrarla: `read -rs DATABASE_URL && export DATABASE_URL`.
-3. 🤖 `npm run db:migrate` y `npm run db:seed` (sin `--mocks`).
-4. ✅ Verifica sin imprimir la cadena: `node -e "const p=require('postgres')(process.env.DATABASE_URL);p\`select count(*)::int n from source\`.then(r=>{console.log('fuentes:',r[0].n);return p.end()})"` → debe imprimir el número de fuentes (22).
-5. 🤖 `unset DATABASE_URL` al terminar.
+## 4. Base de datos (dos roles: administrador y aplicación)
+Sigue `docs/DATABASE.md`. Modelo: **`neondb_owner` (o `postgres` en Supabase) = administrador** (solo migra); **`turistero_app_usr` = aplicación** (solo `SELECT/INSERT/UPDATE/DELETE`, sin DDL). La API usa únicamente el segundo.
+0. 🤖 Antes de tocar producción, valida en local contra Postgres real: `npm run test:pg` (✅ roles + API completa en verde).
+1. 🧑 Crea el proyecto en Neon (recomendado) o Supabase; obtén la URL **directa del administrador** y la del **pooler**.
+2. 🧑 Exporta la URL del administrador sin mostrarla: `read -rs ADMIN_URL && export ADMIN_URL`.
+3. 🤖 Crea el rol de la aplicación con contraseña aleatoria **que nunca se imprime** (queda en una variable de shell):
+   ```bash
+   APP_PWD=$(openssl rand -base64 32 | tr -d '/+=' | cut -c1-32)
+   psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -v db=<neondb|postgres> -v admin_role=<neondb_owner|postgres> \
+        -v app_role=turistero_app_usr -v app_pwd="$APP_PWD" -f packages/db/sql/02-app-role.sql
+   ```
+4. 🤖 Migra y carga el catálogo **como administrador**: `DATABASE_ADMIN_URL="$ADMIN_URL" npm run db:migrate && DATABASE_ADMIN_URL="$ADMIN_URL" npm run db:seed` (sin `--mocks`).
+5. 🤖 Arma la `DATABASE_URL` de la **aplicación** (URL del pooler con usuario `turistero_app_usr` y `$APP_PWD`) en una variable de shell `DATABASE_URL` **sin imprimirla** (el paso 6 la envía a Vercel).
+6. ✅ Verifica permisos sin imprimir secretos: `TEST_ADMIN_DATABASE_URL="$ADMIN_URL" TEST_APP_DATABASE_URL="$DATABASE_URL" npm run test -w @turistero/db` → 7 pruebas en verde (⚠️ crea y borra una tabla temporal: hazlo antes de tener datos reales).
+7. 🧑 Guarda `$APP_PWD` y la URL del administrador en su gestor de contraseñas (no pasan por el chat). Para GitHub Actions: `gh secret set DATABASE_ADMIN_URL` (entrada oculta).
+8. 🤖 Al terminar: `unset ADMIN_URL APP_PWD` (y `DATABASE_URL` después del paso 6 de la sección siguiente).
 
 ## 5. Vercel: dos proyectos del mismo repositorio
 🧑 En Vercel: *Add New → Project* → importa `github.com/<usuario>/turistero` **dos veces**:
@@ -68,7 +77,7 @@ printf %s "$API_SERVICE_TOKEN"  | vercel env add API_SERVICE_TOKEN production
 printf %s "$API_JWT_SECRET"     | vercel env add API_JWT_SECRET production
 gen | tr -d '\n' | vercel env add TOKEN_ENCRYPTION_KEY production   # solo la API; el humano debe respaldarla (ver abajo)
 CRON_SECRET=$(gen); printf %s "$CRON_SECRET" | vercel env add CRON_SECRET production
-printf %s "$DATABASE_URL"       | vercel env add DATABASE_URL production      # el humano la exportó en el paso 4
+printf %s "$DATABASE_URL"       | vercel env add DATABASE_URL production      # URL del rol de la APLICACIÓN (paso 4.5). NUNCA la del administrador
 printf %s "https://<web>"       | vercel env add CORS_ORIGINS production
 printf %s "https://<web>"       | vercel env add NEXT_PUBLIC_SITE_URL production
 printf %s "<correo-admin>"      | vercel env add ADMIN_EMAILS production

@@ -9,7 +9,8 @@ Turistero: agregador de viajes y eventos. Monorepo npm workspaces: `apps/web` (N
 4. No agregues correos reales, teléfonos ni datos personales a código, docs, tests ni fixtures: usa `@example.com` / `@dev.local`.
 5. No hagas scraping de Facebook/Instagram ni automatices navegadores contra ellos. Solo API oficial de Meta, con credenciales autorizadas. Respeta los límites (una lectura por fuente al día).
 6. Acciones que **solo un humano** puede hacer (no las intentes): crear cuentas (Neon/Supabase/Vercel/Meta/Google/Microsoft/Apple), aceptar términos, verificar el negocio, pasar App Review, pagar planes, crear tokens personales. Pide al usuario que las haga y que te pase **solo** los identificadores no secretos.
-7. No despliegues a producción ni cambies visibilidad/ajustes del repo sin que el usuario lo pida explícitamente en esa conversación.
+7. La API usa el rol de la aplicación (`DATABASE_URL`, solo filas). El rol administrador (`DATABASE_ADMIN_URL`) es solo para migrar: nunca lo pongas en Vercel ni en el código de la API.
+8. No despliegues a producción ni cambies visibilidad/ajustes del repo sin que el usuario lo pida explícitamente en esa conversación.
 
 ## Comandos
 ```bash
@@ -21,7 +22,9 @@ npm test               # unitarios + integración + detector de secretos
 npm run e2e            # Playwright (usa Chrome instalado; levanta API :4100, web :3100 y una Graph API simulada :4300)
 npm run secrets:check  # detector de secretos sobre lo versionado
 npm run db:generate    # nueva migración tras editar packages/db/src/schema.ts
-npm run db:migrate     # aplica migraciones (DATABASE_URL o PGlite)
+npm run db:migrate     # aplica migraciones con el rol ADMIN (DATABASE_ADMIN_URL); sin URL usa PGlite
+npm run db:up          # Postgres local en Docker (turistero_db_dev; roles turistero_admin_usr y turistero_app_usr)
+npm run test:pg        # pruebas de roles + API completa contra Postgres real (Docker)
 ```
 
 ## Convenciones

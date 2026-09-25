@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
-import { createDb, seedMockEvents, seedSources, type DbHandle } from "@turistero/db";
+import { seedMockEvents, seedSources, type DbHandle } from "@turistero/db";
+import { createTestDb } from "@turistero/db/src/testing";
 import { createSafeFetcher } from "@turistero/discovery";
 import { createApp } from "./app";
 
@@ -22,7 +23,7 @@ let handle: DbHandle;
 let app: ReturnType<typeof createApp>;
 
 beforeAll(async () => {
-  handle = await createDb({ migrate: true });
+  handle = await createTestDb();
   await seedSources(handle.db);
   await seedMockEvents(handle.db);
   app = createApp({

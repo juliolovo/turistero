@@ -4,7 +4,9 @@ import { createApp } from "./app";
 import { runScheduledTick } from "./tick";
 
 const port = Number(process.env.PORT ?? 4000);
-const handle = await createDb({ migrate: true, dataDir: process.env.PGLITE_DIR });
+// Solo PGlite (desarrollo) se migra al arrancar. Con Postgres real las migraciones las aplica el rol ADMIN con `npm run db:migrate`:
+// el rol de la aplicación (DATABASE_URL) no tiene permiso de DDL a propósito.
+const handle = await createDb({ migrate: !process.env.DATABASE_URL, dataDir: process.env.PGLITE_DIR });
 
 // Desarrollo local sin Postgres: BD PGlite con semilla. En producción se usa DATABASE_URL y se siembra aparte.
 if (handle.kind === "pglite" && process.env.SEED_ON_START !== "0") {

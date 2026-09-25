@@ -60,7 +60,7 @@ export default async function MySources({ searchParams }: { searchParams: Promis
         <ul className="space-y-2">
           {notes.items.slice(0, 8).map((n) => (
             <li key={n.id} className={`rounded-xl px-4 py-2.5 text-sm ${n.readAt ? "bg-white/60" : "bg-white font-medium shadow-sm"}`}>
-              <span aria-hidden>{KIND_ICON[n.kind] ?? "•"}</span> {n.message} <span className="text-xs text-cacao/60">· {relTime(n.createdAt)}</span>
+              <span aria-hidden>{KIND_ICON[n.kind] ?? "•"}</span> {n.message} <span className="text-xs text-cacao/75">· {relTime(n.createdAt)}</span>
             </li>
           ))}
           {!notes.items.length && <li className="rounded-xl border border-dashed border-ink/25 bg-white/60 px-4 py-4 text-center text-sm">Aún no hay novedades. Te avisamos aquí cuando una revisión empiece o encuentre eventos.</li>}
@@ -87,7 +87,7 @@ export default async function MySources({ searchParams }: { searchParams: Promis
       </section>
 
       <section aria-labelledby="propias" className="space-y-3">
-        <h2 id="propias" className="font-display text-2xl font-bold text-ink">Fuentes propias <span className="text-base font-semibold text-cacao/60">({mine.private.length}/{mine.limit})</span></h2>
+        <h2 id="propias" className="font-display text-2xl font-bold text-ink">Fuentes propias <span className="text-base font-semibold text-cacao/75">({mine.private.length}/{mine.limit})</span></h2>
         <ul className="space-y-3">
           {mine.private.map((s) => (
             <li key={s.id} className={`rounded-2xl bg-white p-4 shadow-sm ${s.active ? "" : "opacity-60"}`}>

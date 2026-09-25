@@ -7,7 +7,7 @@
   --color-cal-2: #e4e1d6;
   --color-cacao: #3a1f1a;
   --color-rose: #ff3d7f;
-  --color-rose-deep: #d81b60;
+  --color-rose-deep: #c2185b; /* contraste AA (>= 4.5:1) sobre blanco y sobre el fondo cal */
   --color-lagoon: #0f9d8f;
   --color-mango: #ffc629;
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;

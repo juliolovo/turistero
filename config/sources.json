@@ -51,10 +51,10 @@
         "tiktok": null
       },
       "verification": {
-        "facebook": "unverified"
+        "facebook": "verified"
       },
       "lastReviewedAt": null,
-      "notes": "Identificada por título de página (id 100064698308827); confirmar. Centro comercial de Managua."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. Centro comercial en Linda Vista, Managua (título de la página confirmado). Sin sitio web ni Instagram oficiales encontrados."
     },
     {
       "id": "tavu-tours-travel",
@@ -244,7 +244,9 @@
       "aliases": [
         "Mamut Pub",
         "El Mamut",
-        "Black Mamut Pub"
+        "Black Mamut Pub",
+        "Mamuth Gastropub",
+        "El Mamuth"
       ],
       "type": "venue",
       "country": "NI",
@@ -257,18 +259,23 @@
       "priority": 5,
       "urls": {
         "website": null,
-        "facebook": null,
-        "instagram": null,
-        "tiktok": null
+        "facebook": "https://www.facebook.com/elmamutmanagua",
+        "instagram": "https://www.instagram.com/elmamutmanagua",
+        "tiktok": "https://www.tiktok.com/@elmamutmanagua"
       },
-      "verification": {},
+      "verification": {
+        "facebook": "verified",
+        "instagram": "unverified"
+      },
       "lastReviewedAt": null,
-      "notes": "Los alias pueden ser negocios distintos; NO fusionar sin verificar."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. Centro Comercial Linda Vista, Managua. El Instagram comparte usuario con la página de Facebook (probable, sin confirmar). @mamutrestaurant es OTRO negocio: no vincular."
     },
     {
       "id": "licenciado-cantina",
       "name": "Licenciado Cantina",
-      "aliases": [],
+      "aliases": [
+        "Licenciado Cantinas"
+      ],
       "type": "venue",
       "country": "NI",
       "city": "Managua",
@@ -280,19 +287,23 @@
       "priority": 5,
       "urls": {
         "website": null,
-        "facebook": null,
-        "instagram": null,
+        "facebook": "https://www.facebook.com/barlicenciadocantinas",
+        "instagram": "https://www.instagram.com/licenciadocantinasnica",
         "tiktok": null
       },
-      "verification": {},
+      "verification": {
+        "facebook": "verified",
+        "instagram": "verified"
+      },
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. Semáforos Monte de los Olivos, Managua. Existen otras páginas (licenciadovip, licenciadocantinasbar 'Rock & Beer') que podrían ser sucursales: sin vincular hasta confirmar."
     },
     {
       "id": "bokanada",
       "name": "Bokanada",
       "aliases": [
-        "Cantina Bokanada"
+        "Cantina Bokanada",
+        "Bokanada Bar"
       ],
       "type": "venue",
       "country": "NI",
@@ -305,18 +316,23 @@
       "priority": 5,
       "urls": {
         "website": null,
-        "facebook": null,
-        "instagram": null,
+        "facebook": "https://www.facebook.com/bokanadabar",
+        "instagram": "https://www.instagram.com/bokanadabar",
         "tiktok": null
       },
-      "verification": {},
+      "verification": {
+        "facebook": "verified",
+        "instagram": "verified"
+      },
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. Monte de los Olivos, Managua."
     },
     {
       "id": "cantabar",
       "name": "Cántabar",
-      "aliases": [],
+      "aliases": [
+        "Canta Bar"
+      ],
       "type": "venue",
       "country": "NI",
       "city": "Managua",
@@ -329,12 +345,14 @@
       "urls": {
         "website": null,
         "facebook": null,
-        "instagram": null,
+        "instagram": "https://www.instagram.com/cantabar_ni",
         "tiktok": null
       },
-      "verification": {},
+      "verification": {
+        "instagram": "unverified"
+      },
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. Parece ser 'Canta Bar' (karaoke, Plaza Centroamérica, Managua). El nombre difiere ligeramente: confirmar. Sin página de Facebook propia encontrada."
     },
     {
       "id": "la-sanatura",
@@ -357,7 +375,7 @@
       },
       "verification": {},
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Búsqueda web pública del 2026-09-25 sin resultados para este nombre: puede tener otro nombre o no tener presencia. Pendiente de que el usuario aporte el enlace."
     },
     {
       "id": "motor-rock",
@@ -373,18 +391,23 @@
       "priority": 5,
       "urls": {
         "website": null,
-        "facebook": null,
+        "facebook": "https://www.facebook.com/MotorRockNicaragua",
         "instagram": null,
         "tiktok": null
       },
-      "verification": {},
+      "verification": {
+        "facebook": "verified"
+      },
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. Bar temático de motos en Managua."
     },
     {
       "id": "rock-house-bar",
       "name": "Rock House Bar",
-      "aliases": [],
+      "aliases": [
+        "Rock House Bar Nicaragua",
+        "In The House Bar"
+      ],
       "type": "venue",
       "country": "NI",
       "city": "Managua",
@@ -395,18 +418,23 @@
       "priority": 5,
       "urls": {
         "website": null,
-        "facebook": null,
-        "instagram": null,
+        "facebook": "https://www.facebook.com/profile.php?id=100057264595761",
+        "instagram": "https://www.instagram.com/rockhousebarnicaragua",
         "tiktok": null
       },
-      "verification": {},
+      "verification": {
+        "facebook": "verified",
+        "instagram": "verified"
+      },
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. Antes 'In The House Bar'."
     },
     {
       "id": "bar-vader",
       "name": "Bar Vader",
-      "aliases": [],
+      "aliases": [
+        "The Bar Vader"
+      ],
       "type": "venue",
       "country": "NI",
       "city": "Managua",
@@ -418,18 +446,22 @@
       "priority": 5,
       "urls": {
         "website": null,
-        "facebook": null,
+        "facebook": "https://www.facebook.com/profile.php?id=100076157542766",
         "instagram": null,
         "tiktok": null
       },
-      "verification": {},
+      "verification": {
+        "facebook": "verified"
+      },
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. 'The Bar Vader', Colonia El Periodista, Managua (temático de Star Wars). Sin Instagram encontrado."
     },
     {
       "id": "alianza-francesa",
       "name": "Alianza Francesa",
-      "aliases": [],
+      "aliases": [
+        "Alianza Francesa de Managua"
+      ],
       "type": "cultural",
       "country": "NI",
       "city": "Managua",
@@ -441,14 +473,18 @@
       "active": true,
       "priority": 5,
       "urls": {
-        "website": null,
-        "facebook": null,
-        "instagram": null,
+        "website": "https://alianzafrancesa.org.ni/",
+        "facebook": "https://www.facebook.com/alianzafrancesamanagua",
+        "instagram": "https://www.instagram.com/alianzafrancesamanagua",
         "tiktok": null
       },
-      "verification": {},
+      "verification": {
+        "facebook": "verified",
+        "instagram": "verified",
+        "website": "verified"
+      },
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. Alianza Francesa de Managua (fundada en 1951). También en X: @AFManagua."
     },
     {
       "id": "intur",
@@ -466,22 +502,25 @@
       "active": true,
       "priority": 5,
       "urls": {
-        "website": null,
-        "facebook": null,
+        "website": "https://www.intur.gob.ni/",
+        "facebook": "https://www.facebook.com/InturNicaragua",
         "instagram": null,
         "tiktok": null
       },
-      "verification": {},
+      "verification": {
+        "facebook": "verified",
+        "website": "verified"
+      },
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. Sitio oficial del gobierno (dominio gob.ni)."
     },
     {
       "id": "stereo-beso",
       "name": "Stereo Beso",
       "aliases": [],
-      "type": "organizer",
+      "type": "media",
       "country": "NI",
-      "city": "Managua",
+      "city": "Estelí",
       "categories": [
         "music",
         "party"
@@ -489,14 +528,16 @@
       "active": true,
       "priority": 5,
       "urls": {
-        "website": null,
+        "website": "https://stereobeso.com/proximos-eventos/",
         "facebook": null,
         "instagram": null,
         "tiktok": null
       },
-      "verification": {},
+      "verification": {
+        "website": "verified"
+      },
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. Stereo Beso 94.5 FM (emisora de Estelí). La página de próximos eventos lista conciertos en Nicaragua: buena fuente web (JSON-LD/HTML). Sin redes verificadas."
     },
     {
       "id": "sabu-tours",
@@ -518,7 +559,7 @@
       },
       "verification": {},
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Búsqueda web pública del 2026-09-25 sin resultados para este nombre (aparecen otras operadoras de León, p. ej. Bárbaro Tours). Pendiente de que el usuario aporte el enlace."
     },
     {
       "id": "el-paso-leon",
@@ -536,12 +577,14 @@
       "urls": {
         "website": null,
         "facebook": null,
-        "instagram": null,
+        "instagram": "https://www.instagram.com/bar.restaurante.elpaso",
         "tiktok": null
       },
-      "verification": {},
+      "verification": {
+        "instagram": "unverified"
+      },
       "lastReviewedAt": null,
-      "notes": "Por investigar: sin URLs verificadas."
+      "notes": "Enlaces hallados en una búsqueda web pública el 2026-09-25; verified = el nombre que muestra la propia cuenta coincide con la entidad y la ciudad. 'Bar Restaurante El Paso' (desde 1969). No se confirmó que sea el de León: verificar antes de activarla."
     }
   ]
 }

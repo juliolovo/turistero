@@ -1,10 +1,11 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import type { DateRangeKey, EventQuery, PriceFilter, SortKey, ViewMode } from "@turistero/types";
 import { CATEGORIES, COUNTRIES, DEFAULT_COUNTRY, getCategory, getPlace, isCategoryId, placesOf } from "@turistero/config";
-import { queryEvents } from "@/lib/events-repo";
+import { queryEvents, queryEventsPage } from "@/lib/events-repo";
 import { getFavoriteState } from "@/lib/favorites";
 import { auth } from "@/auth";
 import { first, href, type Params } from "@/lib/url";
@@ -15,6 +16,8 @@ import { EventsSkeleton } from "@/components/skeletons";
 import { EmptyState } from "@/components/states";
 
 type SP = Promise<Record<string, string | string[] | undefined>>;
+
+const PAGE_SIZE = Math.min(Math.max(Number(process.env.EVENTS_PAGE_SIZE) || 24, 3), 100);
 
 const RANGES: { key: DateRangeKey; label: string; sub: string }[] = [
   { key: "today", label: "Hoy", sub: "esta noche y todo el día" },
@@ -46,6 +49,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     mine: p.mine === "1" && !!signedIn,
   };
   const base: Params = { city: p.city, category: p.category, range: p.range, price: p.price, sort: p.sort, q: p.q, view: p.view, mine: p.mine };
+  const pageNum = Math.max(1, Math.floor(Number(p.page)) || 1);
   const where = place?.name ?? COUNTRIES[DEFAULT_COUNTRY]!.name;
 
   return (
@@ -112,8 +116,8 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
           <ViewToggle current={view} hrefs={{ cards: href(base, { view: "cards" }, "#eventos"), list: href(base, { view: "list" }, "#eventos") }} />
         </div>
 
-        <Suspense key={JSON.stringify(query) + view} fallback={<EventsSkeleton view={view} />}>
-          <Results query={query} view={view} categoryLabel={category ? getCategory(category).label : undefined} />
+        <Suspense key={JSON.stringify(query) + view + pageNum} fallback={<EventsSkeleton view={view} />}>
+          <Results query={query} view={view} page={pageNum} base={base} categoryLabel={category ? getCategory(category).label : undefined} />
         </Suspense>
       </div>
 
@@ -150,8 +154,10 @@ function Chip({ active, to, children }: { active: boolean; to: string; children:
   );
 }
 
-async function Results({ query, view, categoryLabel }: { query: EventQuery; view: ViewMode; categoryLabel?: string }) {
-  const [events, fav] = await Promise.all([queryEvents(query), getFavoriteState()]);
+async function Results({ query, view, page, base, categoryLabel }: { query: EventQuery; view: ViewMode; page: number; base: Params; categoryLabel?: string }) {
+  const [result, fav] = await Promise.all([queryEventsPage(query, page, PAGE_SIZE), getFavoriteState()]);
+  const { items: events, total } = result;
+  if (!events.length && page > 1) redirect(href(base, {}, "#eventos")); // página fuera de rango: vuelve a la primera
   if (!events.length) {
     return (
       <EmptyState
@@ -162,10 +168,13 @@ async function Results({ query, view, categoryLabel }: { query: EventQuery; view
       />
     );
   }
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const first = (page - 1) * PAGE_SIZE + 1;
   return (
     <section aria-labelledby="todos">
       <h2 id="todos" className="mb-3 font-display text-2xl font-bold text-ink">
-        {events.length} {events.length === 1 ? "evento" : "eventos"}
+        {total} {total === 1 ? "evento" : "eventos"}
+        {pages > 1 && <span className="ml-2 text-base font-semibold text-cacao/70">(mostrando {first}–{first + events.length - 1})</span>}
       </h2>
       {view === "list" ? (
         <EventTable events={events} />
@@ -174,7 +183,25 @@ async function Results({ query, view, categoryLabel }: { query: EventQuery; view
           {events.map((e, i) => <EventCard key={e.id} event={e} priority={i < 3} fav={fav} />)}
         </div>
       )}
+      {pages > 1 && <Pager page={page} pages={pages} hrefFor={(n) => href(base, { page: n > 1 ? String(n) : undefined }, "#eventos")} />}
     </section>
+  );
+}
+
+function Pager({ page, pages, hrefFor }: { page: number; pages: number; hrefFor: (n: number) => string }) {
+  const shown = [...new Set([1, page - 1, page, page + 1, pages])].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b);
+  const link = "rounded-full border border-ink/20 bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:border-ink";
+  return (
+    <nav aria-label="Paginación de eventos" className="mt-8 flex flex-wrap items-center justify-center gap-2">
+      {page > 1 && <Link href={hrefFor(page - 1)} rel="prev" scroll={false} className={link}>Anterior</Link>}
+      {shown.map((n, i) => (
+        <span key={n} className="contents">
+          {i > 0 && n - shown[i - 1]! > 1 && <span aria-hidden className="px-1 text-cacao/75">…</span>}
+          <Link href={hrefFor(n)} scroll={false} aria-current={n === page ? "page" : undefined} aria-label={`Página ${n}`} className={n === page ? "rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white" : link}>{n}</Link>
+        </span>
+      ))}
+      {page < pages && <Link href={hrefFor(page + 1)} rel="next" scroll={false} className={link}>Siguiente</Link>}
+    </nav>
   );
 }
 

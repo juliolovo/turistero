@@ -12,7 +12,7 @@ export default async function SourcesPage({ searchParams }: { searchParams: Prom
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-3xl font-extrabold text-ink">Fuentes <span className="text-lg font-semibold text-cacao/60">({items.length})</span></h1>
+        <h1 className="font-display text-3xl font-extrabold text-ink">Fuentes <span className="text-lg font-semibold text-cacao/75">({items.length})</span></h1>
         <div className="flex gap-2">
           <a href="/admin/sources/export" className={btn}>Exportar JSON</a>
         </div>
@@ -26,7 +26,7 @@ export default async function SourcesPage({ searchParams }: { searchParams: Prom
           <tbody>
             {items.map(({ source: s, lastCheck, failureStreak }) => (
               <tr key={s.id} className={`border-b border-cal-2 align-top ${s.active ? "" : "opacity-55"}`}>
-                <td className="px-3 py-2"><Link href={`/admin/sources/${s.id}`} className="font-semibold text-ink hover:underline">{s.name}</Link>{s.aliases.length > 0 && <p className="text-xs text-cacao/60">{s.aliases.join(", ")}</p>}</td>
+                <td className="px-3 py-2"><Link href={`/admin/sources/${s.id}`} className="font-semibold text-ink hover:underline">{s.name}</Link>{s.aliases.length > 0 && <p className="text-xs text-cacao/75">{s.aliases.join(", ")}</p>}</td>
                 <td className="px-3 py-2">{s.city ?? "—"}</td>
                 <td className="px-3 py-2">{s.type}</td>
                 <td className="px-3 py-2"><ExtLink href={s.urls.facebook}>Abrir</ExtLink>{s.urls.facebook && s.verification.facebook !== "verified" && <span title="Vínculo sin verificar" className="ml-1">⚠︎</span>}</td>

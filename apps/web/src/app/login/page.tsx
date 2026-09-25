@@ -85,7 +85,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
               <s.Icon className="size-5 shrink-0" />
               {s.label}
             </button>
-            {off(s.id) && <p className="mt-1 text-center text-xs text-cacao/60">Sin configurar — falta {s.env} (ver docs/AUTH.md)</p>}
+            {off(s.id) && <p className="mt-1 text-center text-xs text-cacao/75">Sin configurar — falta {s.env} (ver docs/AUTH.md)</p>}
           </form>
         ))}
       </div>

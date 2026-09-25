@@ -20,7 +20,9 @@ async function get<T>(path: string, revalidate = 60, anonymous = false): Promise
   return (await res.json()) as T;
 }
 
-export async function apiQueryEvents(q: EventQuery): Promise<EventItem[]> {
+export interface EventsPage { items: EventItem[]; total: number; page: number; pageSize: number }
+
+export async function apiQueryEventsPage(q: EventQuery): Promise<EventsPage> {
   const sp = new URLSearchParams();
   const set = (k: string, v?: string | number) => v !== undefined && v !== "" && sp.set(k, String(v));
   set("country", q.country);
@@ -33,9 +35,14 @@ export async function apiQueryEvents(q: EventQuery): Promise<EventItem[]> {
   set("sort", q.sort);
   set("q", q.q);
   if (q.mine) sp.set("mine", "true");
-  set("pageSize", Math.min(q.limit ?? 100, 100));
-  const page = await get<{ items: EventItem[] }>(`/events?${sp}`);
-  return page?.items ?? [];
+  set("pageSize", Math.min(q.pageSize ?? q.limit ?? 100, 100));
+  if (q.page && q.page > 1) sp.set("page", String(q.page));
+  const page = await get<EventsPage>(`/events?${sp}`);
+  return page ?? { items: [], total: 0, page: 1, pageSize: q.pageSize ?? 100 };
+}
+
+export async function apiQueryEvents(q: EventQuery): Promise<EventItem[]> {
+  return (await apiQueryEventsPage(q)).items;
 }
 
 export async function apiGetEvent(slug: string): Promise<EventItem | undefined> {

@@ -20,9 +20,9 @@ export default async function AdminEvents({ searchParams }: { searchParams: Prom
     <div className="space-y-5">
       <h1 className="font-display text-3xl font-extrabold text-ink">Eventos</h1>
       <Flash ok={sp.ok} error={sp.error} />
-      <div role="tablist" className="flex gap-2">
+      <nav aria-label="Estado de los eventos" className="flex gap-2">
         {TABS.map((t) => <Link key={t.key} href={`/admin/events?status=${t.key}`} aria-current={t.key === status ? "true" : undefined} className={`rounded-full px-4 py-2 text-sm font-semibold ${t.key === status ? "bg-ink text-white" : "border border-ink/20 bg-white"}`}>{t.label}</Link>)}
-      </div>
+      </nav>
       <p className="text-sm">{data.total} evento(s). Los de confianza <strong>LOW</strong> no se muestran al público hasta que los apruebes.</p>
 
       <ul className="space-y-3">

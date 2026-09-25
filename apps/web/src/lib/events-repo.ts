@@ -2,7 +2,7 @@ import { cache } from "react";
 import type { EventItem, EventQuery } from "@turistero/types";
 import { getPlace, resolveRange, DEFAULT_COUNTRY, getCategory } from "@turistero/config";
 import { buildMockEvents } from "@turistero/mocks";
-import { apiEnabled, apiGetEvent, apiQueryEvents } from "./api-client";
+import { apiEnabled, apiGetEvent, apiQueryEvents, apiQueryEventsPage, type EventsPage } from "./api-client";
 
 /**
  * Repositorio de eventos. Con API_URL usa la API Express (Postgres); sin ella, datos de ejemplo en memoria
@@ -55,6 +55,13 @@ const mockQuery = async (q: EventQuery): Promise<EventItem[]> => {
 export const queryEvents = cache(async (q: EventQuery = {}): Promise<EventItem[]> =>
   apiEnabled() ? apiQueryEvents(q) : mockQuery(q),
 );
+
+/** Una página de resultados con el total (para el paginador de la home). */
+export const queryEventsPage = cache(async (q: EventQuery, page: number, pageSize: number): Promise<EventsPage> => {
+  if (apiEnabled()) return apiQueryEventsPage({ ...q, page, pageSize });
+  const all = await mockQuery(q);
+  return { items: all.slice((page - 1) * pageSize, page * pageSize), total: all.length, page, pageSize };
+});
 
 export const getEventBySlug = cache(async (slug: string): Promise<EventItem | undefined> => {
   if (apiEnabled()) return apiGetEvent(slug);

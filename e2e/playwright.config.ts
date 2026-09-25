@@ -42,7 +42,7 @@ export default defineConfig({
       url: WEB,
       reuseExistingServer: false,
       timeout: 240_000,
-      env: { ...secrets, API_URL: API, AUTH_SECRET: "e2e-auth-secret-0123456789abcdef0123456789", AUTH_TRUST_HOST: "true", ALLOW_DEV_LOGIN: "1", NEXT_PUBLIC_SITE_URL: WEB, META_APP_ID: "1234567890" },
+      env: { ...secrets, API_URL: API, AUTH_SECRET: "e2e-auth-secret-0123456789abcdef0123456789", AUTH_TRUST_HOST: "true", ALLOW_DEV_LOGIN: "1", NEXT_PUBLIC_SITE_URL: WEB, META_APP_ID: "1234567890", EVENTS_PAGE_SIZE: "10" },
     },
   ],
 });

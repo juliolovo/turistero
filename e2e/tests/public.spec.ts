@@ -85,3 +85,41 @@ test.describe("visitante anónimo", () => {
     expect(overflow).toBe(false);
   });
 });
+
+test.describe("paginación de la home (10 por página en E2E)", () => {
+  const titles = (page: import("@playwright/test").Page) => page.locator("#eventos").getByRole("article").locator("h3").allTextContents();
+
+  test("aparece el paginador, navega entre páginas y no repite eventos", async ({ page }) => {
+    await page.goto("/");
+    const nav = page.getByRole("navigation", { name: "Paginación de eventos" });
+    await expect(nav).toBeVisible();
+    await expect(page.locator("#eventos").getByRole("article")).toHaveCount(10);
+    await expect(page.getByRole("heading", { name: /eventos.*mostrando 1–10/ })).toBeVisible();
+    const first = await titles(page);
+
+    await nav.getByRole("link", { name: "Siguiente" }).click();
+    await expect(page).toHaveURL(/page=2/);
+    await expect(nav.getByRole("link", { name: "Página 2" })).toHaveAttribute("aria-current", "page");
+    const second = await titles(page);
+    expect(second.length).toBeGreaterThan(0);
+    expect(second.filter((t) => first.includes(t))).toEqual([]); // ninguna repetida
+
+    await nav.getByRole("link", { name: "Anterior" }).click();
+    await expect(nav.getByRole("link", { name: "Página 1" })).toHaveAttribute("aria-current", "page");
+  });
+
+  test("cambiar un filtro vuelve a la primera página; una página inexistente redirige", async ({ page }) => {
+    await page.goto("/?page=2");
+    await page.getByRole("group", { name: "Categorías" }).getByRole("link", { name: /Rock/ }).click();
+    await expect(page).not.toHaveURL(/page=/);
+    await page.goto("/?page=999");
+    await expect(page).not.toHaveURL(/page=999/);
+    await expect(page.locator("#eventos").getByRole("article").first()).toBeVisible();
+  });
+
+  test("con pocos resultados no hay paginador", async ({ page }) => {
+    await page.goto("/?category=rock");
+    await expect(page.locator("#eventos").getByRole("article").first()).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Paginación de eventos" })).toHaveCount(0);
+  });
+});

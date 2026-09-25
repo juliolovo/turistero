@@ -99,4 +99,7 @@ export interface EventQuery {
   /** Agenda personal (fuentes propias + suscritas). Requiere sesión. */
   mine?: boolean;
   limit?: number;
+  /** Paginación (1-based). */
+  page?: number;
+  pageSize?: number;
 }

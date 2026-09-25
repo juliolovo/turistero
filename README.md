@@ -56,7 +56,8 @@ Producción: crea una base en Neon/Supabase, define `DATABASE_URL`, `db:migrate`
 ## Fuentes
 `config/sources.json` es semilla y respaldo (22 fuentes). Cada una: `id, name, aliases, type, country, city, categories, active, priority, urls{website,facebook,instagram,tiktok,rss}, verification, lastReviewedAt, notes`.
 - `verification: "verified"` solo cuando se comprobó que la URL pertenece a esa entidad. **No se vincula Instagram↔Facebook por parecido de nombre**: p. ej. `@larutanicaragua` no se asocia a Ruta Segura.
-- Nombres de las páginas de Facebook tomados del título público de cada página: TAVÚ - Tours & Travel (id 61577210645241), NicaRoad, Wanderlust Travel, Transporte Dávila & Tours, Finding Adventures Nicaragua (León), Ruta Segura, Teatro Nacional Rubén Darío. **Multicentro Las Brisas** (id 100064698308827) queda `unverified`. Sin Instagram/web oficial vinculados todavía.
+- 20 de las 22 fuentes tienen ya algún enlace. Los enlaces salen de búsquedas web públicas (2026-09-25) y `verified` significa que el nombre que muestra la propia cuenta coincide con la entidad y la ciudad; lo dudoso queda `unverified` con su nota (p. ej. el Instagram de Cántabar/“Canta Bar”, o el de El Paso, que puede no ser el de León). **La Sanatura** y **Sabu Tours** no aparecieron en las búsquedas.
+- Stereo Beso (94.5 FM, Estelí) entra por su **web** de próximos eventos, que sí se puede leer sin API.
 - Alias (Mamuth/Mamut/Black Mamut…) no fusionan negocios distintos sin verificar.
 
 **Agregar una fuente**: `/admin/sources` → *Agregar fuente*, o `POST /api/sources`, o editar `sources.json` y `npm run db:seed`.
@@ -76,14 +77,13 @@ Para cada fuente activa se ejecutan los adaptadores aplicables y se combinan (`c
 Luego `event-parser` extrae título, fecha/hora (español informal: “viernes 25 de septiembre 8 PM”, “mañana”, “este sábado”…), lugar, ciudad, precio (`C$` = NIO, `$`/`US$` = USD, “entrada libre”), categoría y **confianza** (`HIGH` fecha+hora+lugar+categoría claros · `MEDIUM` incompleto · `LOW` ambiguo). Público: HIGH y MEDIUM; LOW queda `PENDING` para revisión. La **deduplicación** (título normalizado + día + lugar + similitud) fusiona el mismo evento visto en varias fuentes conservando **todas** (`event_source`).
 Estados de auditoría: `SUCCESS · NO_EVENTS · NO_RECENT_CONTENT · ACCESS_RESTRICTED · AUTH_REQUIRED · RATE_LIMITED · NOT_FOUND · ERROR`.
 
-### Meta (Facebook / Instagram)
-- **Login**: Google y Facebook (`public_profile`, `email`). **Instagram no se ofrece como login**: la API de Meta para Instagram solo admite cuentas profesionales (Business/Creator).
-- **Lectura de contenido** (Fase 4, `/admin/connections`, solo ADMIN): pegas un token y su ID; se guarda **cifrado** con `TOKEN_ENCRYPTION_KEY`.
-  - Facebook: requiere la función *Page Public Content Access* (App Review de Meta) para leer Páginas de terceros.
-  - Instagram: Business Discovery lee cuentas profesionales públicas usando el IG User ID de una cuenta profesional tuya y un token de Facebook Login.
-  - Meta **no** expone la lista de páginas que alguien sigue: la lista se arma pegando URLs/nombres; los “posibles lugares nuevos” salen de menciones y enlaces en lo revisado y de búsquedas.
-  - Los códigos de error de Graph API se traducen a estados de auditoría (mejor esfuerzo; verifica contra la documentación vigente de Meta y ajusta `GRAPH_VERSION` con `META_GRAPH_VERSION`, por defecto `v21.0`).
-  - Aún no hay flujo OAuth de “conectar Meta” en la UI: requiere App Review y verificar los scopes vigentes. Mientras, `META_FB_TOKEN` / `META_IG_TOKEN` + `META_IG_USER_ID` permiten probar.
+### Meta (Facebook / Instagram): dos usos distintos de la misma app
+1. **Iniciar sesión con Facebook** (`AUTH_FACEBOOK_ID/SECRET`, permisos `public_profile` y `email`): solo identifica a la persona; no necesita token ni "conexión". **Instagram no se ofrece como login**: la API de Meta para Instagram solo admite cuentas profesionales (Business/Creator).
+2. **Leer publicaciones** (Graph API) con **una sola conexión** (la del administrador, `/admin/connections`): todas las llamadas a las APIs de Meta (para todas las fuentes de Facebook e Instagram, propias o del catálogo) usan ese token. No hace falta una conexión por usuario.
+   - **Botón "Conectar con Meta"**: OAuth con `state` anti-CSRF de un solo uso → la API canjea el código con el secreto de la app, obtiene un token de larga duración (~60 días), detecta tus Páginas y tu cuenta de Instagram profesional y guarda todo **cifrado** (`TOKEN_ENCRYPTION_KEY`). Botón **Probar** para validarlo, aviso 7 días antes de vencer y **Reconectar**. Alternativa manual: pegar un token.
+   - Facebook: leer Páginas de terceros requiere la función *Page Public Content Access* (App Review de Meta). Instagram: Business Discovery lee cuentas profesionales públicas usando el IG User ID de tu cuenta profesional.
+   - Meta **no** expone la lista de páginas que alguien sigue: la lista se arma pegando URLs/nombres; los "posibles lugares nuevos" salen de menciones y enlaces en lo revisado y de búsquedas.
+   - Los códigos de error de Graph API se traducen a estados de auditoría (mejor esfuerzo; verifica contra la documentación vigente de Meta; versión con `META_GRAPH_VERSION`, por defecto `v21.0`).
 
 ## Auth
 Cinco métodos: **usuario y contraseña**, **Google**, **Meta (Facebook)**, **Microsoft** y **Apple** (Instagram no es un login: solo cuentas profesionales). Detalle, credenciales y reglas de seguridad en [`docs/AUTH.md`](docs/AUTH.md). Roles: `USER` (favoritos, fuentes propias, horario), `EDITOR` (eventos, fuentes, candidatos, corridas), `ADMIN` (usuarios, borrado, import, conexiones).
@@ -118,13 +118,17 @@ Listados paginados `{ items, page, pageSize, total }`; entrada validada con Zod;
 Auth de la API: `Bearer $API_SERVICE_TOKEN` (servidor a servidor), `Bearer <JWT>` de usuario (HS256, `iss=turistero-web`, `aud=turistero-api`) o, solo en desarrollo, `x-dev-user: id:ROLE`.
 
 ## Pruebas
-`npm test`: **config** (fechas/zonas/títulos), **event-parser** (fechas, precios, clasificación, deduplicación, HTML, extracción), **discovery** (fetch seguro/SSRF/robots, adaptadores, Graph API simulada), **API** (integración con PGlite: eventos, fuentes, auth/JWT/roles, discovery de punta a punta, cron, conexiones cifradas). `npm run e2e`: home, filtros, búsqueda, lista/cards, detalle, login, favoritos, admin, móvil, teclado.
+- `npm test`: **config**, **event-parser** (fechas, precios, clasificación, deduplicación, HTML, extracción), **discovery** (fetch seguro/SSRF/robots, adaptadores, Graph API simulada), **API** (integración: eventos, fuentes, auth/JWT/roles, discovery de punta a punta, cron, conexiones cifradas, "Conectar con Meta"), **meta-app** (scripts) y el **detector de secretos**. Sin configuración usa PGlite en memoria.
+- `npm run test:pg`: las pruebas de **permisos de roles** y **toda la API contra Postgres 16 real** (Docker; ver `docs/DATABASE.md`).
+- `npm run e2e`: Playwright con Chrome (home, paginación, filtros, búsqueda, lista/cards, detalle, login y registro, favoritos, mis fuentes/horario, admin, "Conectar con Meta" con Graph API simulada, móvil, teclado) y **accesibilidad automática (axe-core, WCAG AA)** en las pantallas principales.
+- CI (`.github/workflows/`): typecheck, tests, build, Postgres real, E2E y escaneo de secretos del historial; validado con `actionlint`.
 
-## Pendiente
-- Registrar la Meta App y pasar App Review (todo lo necesario está en [`meta-app/`](meta-app/README.md)); flujo OAuth “Conectar Meta” en la UI, que depende de esa aprobación; proveedor real para `SearchAdapter`.
+## Pendiente (depende de ti o de servicios externos)
+- Crear la **app de Meta** y pegar su ID/secreto (guía en [`meta-app/`](meta-app/README.md)); **App Review + verificación del negocio** para usarla con otras personas o leer Páginas ajenas.
+- Crear las credenciales de **Google, Microsoft y Apple** ([`docs/AUTH.md`](docs/AUTH.md)).
+- **Producción**: Neon (o Supabase), dos proyectos de Vercel y variables ([`docs/AI-RUNBOOK.md`](docs/AI-RUNBOOK.md)); revisar `/privacy` y `/terms` con tus datos reales.
 - Recuperación de contraseña y verificación de correo (requieren un servicio de correo).
-- Registrar los proveedores de login (Google, Microsoft, Apple) con tus credenciales y desplegar (pipelines listos, apagados).
-- Investigar Instagram/web oficiales de las fuentes sin URLs y verificar sus vínculos.
-- Conexión de Meta por usuario (hoy se usa la del administrador) y más países/ciudades (el catálogo de lugares aún es solo Nicaragua).
-- Recomendaciones más allá de “También podría interesarte” (por ahora: recencia + ciudad).
-- Paginación en la home (hoy hasta 100 eventos) y caché de listados en producción.
+- Proveedor real para `SearchAdapter` (descubrir fuentes nuevas por búsqueda).
+- Confirmar las fuentes marcadas `unverified` y aportar los enlaces de **La Sanatura** y **Sabu Tours** (no aparecen en búsquedas públicas).
+- Más países y ciudades (el catálogo de lugares es solo Nicaragua) y recomendaciones más allá de "También podría interesarte".
+- Verificado solo con **simulaciones**: las APIs reales de Meta y de los proveedores de login, los pipelines de GitHub en ejecución real y el empaquetado en Vercel.

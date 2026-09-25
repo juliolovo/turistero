@@ -50,7 +50,7 @@ export function Th({ children }: { children?: React.ReactNode }) {
 }
 
 export function ExtLink({ href, children }: { href: string | null | undefined; children: React.ReactNode }) {
-  if (!href) return <span className="text-cacao/40">—</span>;
+  if (!href) return <span className="text-cacao/70">—</span>;
   return <a href={href} target="_blank" rel="noopener noreferrer" className="font-semibold text-rose-deep underline underline-offset-2">{children}</a>;
 }
 

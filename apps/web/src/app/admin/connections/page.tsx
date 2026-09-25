@@ -60,7 +60,7 @@ export default async function Connections({ searchParams }: { searchParams: Prom
               return (
                 <tr key={c.id} className="border-b border-cal-2 align-top">
                   <td className="px-3 py-2">{c.provider}</td>
-                  <td className="px-3 py-2">{c.label ?? c.externalId}<span className="block text-xs text-cacao/60">ID {c.externalId}</span></td>
+                  <td className="px-3 py-2">{c.label ?? c.externalId}<span className="block text-xs text-cacao/75">ID {c.externalId}</span></td>
                   <td className={`px-3 py-2 ${soon ? "font-semibold text-rose-deep" : ""}`}>{c.expiresAt ? `${fmtDateTime(c.expiresAt)}${d !== null ? (d > 0 ? ` (${d} d)` : " (vencido)") : ""}` : "—"}</td>
                   <td className="px-3 py-2">{c.lastError ? <span className="text-rose-deep">⚠ {c.lastError}</span> : <>✅ activa</>}</td>
                   <td className="px-3 py-2">

@@ -1,0 +1,9 @@
+import { createDb } from "./client";
+import { seedMockEvents, seedSources } from "./seed";
+
+const withMocks = process.argv.includes("--mocks");
+const { db, close, kind } = await createDb({ migrate: true, dataDir: process.env.PGLITE_DIR });
+console.log(`DB: ${kind}`);
+console.log("sources:", await seedSources(db));
+if (withMocks) console.log("mock events:", await seedMockEvents(db));
+await close();

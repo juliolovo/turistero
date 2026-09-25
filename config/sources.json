@@ -1,0 +1,547 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "id": "ron-kon-rolas",
+      "name": "Ron Kon Rolas",
+      "aliases": [
+        "RKR",
+        "Rock and Rollas",
+        "Ronkonrolas"
+      ],
+      "type": "venue",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "rock",
+        "music"
+      ],
+      "active": true,
+      "priority": 10,
+      "urls": {
+        "website": null,
+        "facebook": "https://www.facebook.com/ronkonrolas.bar.en.managua",
+        "instagram": "https://www.instagram.com/ronkonrolas",
+        "tiktok": null
+      },
+      "verification": {
+        "facebook": "verified",
+        "instagram": "verified"
+      },
+      "lastReviewedAt": null,
+      "notes": "URLs aportadas por el usuario."
+    },
+    {
+      "id": "multicentro-las-brisas",
+      "name": "Multicentro Las Brisas",
+      "aliases": [],
+      "type": "mall",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "party",
+        "food"
+      ],
+      "active": true,
+      "priority": 8,
+      "urls": {
+        "website": null,
+        "facebook": "https://www.facebook.com/profile.php?id=100064698308827",
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {
+        "facebook": "unverified"
+      },
+      "lastReviewedAt": null,
+      "notes": "Identificada por título de página (id 100064698308827); confirmar. Centro comercial de Managua."
+    },
+    {
+      "id": "tavu-tours-travel",
+      "name": "TAVÚ - Tours & Travel",
+      "aliases": [],
+      "type": "tour-operator",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "tours"
+      ],
+      "active": true,
+      "priority": 10,
+      "urls": {
+        "website": null,
+        "facebook": "https://www.facebook.com/profile.php?id=61577210645241",
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {
+        "facebook": "verified"
+      },
+      "lastReviewedAt": null,
+      "notes": "Nombre tomado del título público de la página de Facebook; sin Instagram/web oficial vinculados (no se asume por parecido de nombre). (id 61577210645241)"
+    },
+    {
+      "id": "nicaroad",
+      "name": "NicaRoad",
+      "aliases": [
+        "Nica Road"
+      ],
+      "type": "tour-operator",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "tours"
+      ],
+      "active": true,
+      "priority": 10,
+      "urls": {
+        "website": null,
+        "facebook": "https://www.facebook.com/NicaRoad",
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {
+        "facebook": "verified"
+      },
+      "lastReviewedAt": null,
+      "notes": "Nombre tomado del título público de la página de Facebook; sin Instagram/web oficial vinculados (no se asume por parecido de nombre)."
+    },
+    {
+      "id": "wanderlust-travel",
+      "name": "Wanderlust Travel",
+      "aliases": [
+        "Wanderlust Nica"
+      ],
+      "type": "tour-operator",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "tours"
+      ],
+      "active": true,
+      "priority": 10,
+      "urls": {
+        "website": null,
+        "facebook": "https://www.facebook.com/wanderlustNica",
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {
+        "facebook": "verified"
+      },
+      "lastReviewedAt": null,
+      "notes": "Nombre tomado del título público de la página de Facebook; sin Instagram/web oficial vinculados (no se asume por parecido de nombre)."
+    },
+    {
+      "id": "transporte-davila-tours",
+      "name": "Transporte Dávila & Tours",
+      "aliases": [
+        "Transporte Ávila"
+      ],
+      "type": "tour-operator",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "tours"
+      ],
+      "active": true,
+      "priority": 9,
+      "urls": {
+        "website": null,
+        "facebook": "https://www.facebook.com/transportedavila.ni",
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {
+        "facebook": "verified"
+      },
+      "lastReviewedAt": null,
+      "notes": "Nombre tomado del título público de la página de Facebook; sin Instagram/web oficial vinculados (no se asume por parecido de nombre)."
+    },
+    {
+      "id": "finding-adventures-nicaragua",
+      "name": "Finding Adventures Nicaragua",
+      "aliases": [
+        "Finding Adventure"
+      ],
+      "type": "tour-operator",
+      "country": "NI",
+      "city": "León",
+      "categories": [
+        "tours"
+      ],
+      "active": true,
+      "priority": 10,
+      "urls": {
+        "website": null,
+        "facebook": "https://www.facebook.com/finding.adventure",
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {
+        "facebook": "verified"
+      },
+      "lastReviewedAt": null,
+      "notes": "Nombre tomado del título público de la página de Facebook; sin Instagram/web oficial vinculados (no se asume por parecido de nombre)."
+    },
+    {
+      "id": "ruta-segura-nicaragua",
+      "name": "Ruta Segura Nicaragua",
+      "aliases": [
+        "Ruta Segura"
+      ],
+      "type": "tour-operator",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "tours"
+      ],
+      "active": true,
+      "priority": 10,
+      "urls": {
+        "website": null,
+        "facebook": "https://www.facebook.com/rutasegurani",
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {
+        "facebook": "verified"
+      },
+      "lastReviewedAt": null,
+      "notes": "La cuenta de Instagram @larutanicaragua NO se vincula: no está verificado que sea la misma entidad."
+    },
+    {
+      "id": "teatro-nacional-ruben-dario",
+      "name": "Teatro Nacional Rubén Darío",
+      "aliases": [
+        "TNRD"
+      ],
+      "type": "cultural",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "theater",
+        "music",
+        "dance"
+      ],
+      "active": true,
+      "priority": 10,
+      "urls": {
+        "website": null,
+        "facebook": "https://www.facebook.com/tnrd.oficial",
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {
+        "facebook": "verified"
+      },
+      "lastReviewedAt": null,
+      "notes": "Nombre tomado del título público de la página de Facebook; sin Instagram/web oficial vinculados (no se asume por parecido de nombre)."
+    },
+    {
+      "id": "the-mamuth-pub",
+      "name": "The Mamuth Pub",
+      "aliases": [
+        "Mamut Pub",
+        "El Mamut",
+        "Black Mamut Pub"
+      ],
+      "type": "venue",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "rock",
+        "music"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Los alias pueden ser negocios distintos; NO fusionar sin verificar."
+    },
+    {
+      "id": "licenciado-cantina",
+      "name": "Licenciado Cantina",
+      "aliases": [],
+      "type": "venue",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "music",
+        "party"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    },
+    {
+      "id": "bokanada",
+      "name": "Bokanada",
+      "aliases": [
+        "Cantina Bokanada"
+      ],
+      "type": "venue",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "music",
+        "party"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    },
+    {
+      "id": "cantabar",
+      "name": "Cántabar",
+      "aliases": [],
+      "type": "venue",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "music",
+        "party"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    },
+    {
+      "id": "la-sanatura",
+      "name": "La Sanatura",
+      "aliases": [],
+      "type": "venue",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "music",
+        "party"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    },
+    {
+      "id": "motor-rock",
+      "name": "Motor Rock",
+      "aliases": [],
+      "type": "venue",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "rock"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    },
+    {
+      "id": "rock-house-bar",
+      "name": "Rock House Bar",
+      "aliases": [],
+      "type": "venue",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "rock"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    },
+    {
+      "id": "bar-vader",
+      "name": "Bar Vader",
+      "aliases": [],
+      "type": "venue",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "rock",
+        "party"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    },
+    {
+      "id": "alianza-francesa",
+      "name": "Alianza Francesa",
+      "aliases": [],
+      "type": "cultural",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "art",
+        "cinema",
+        "theater"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    },
+    {
+      "id": "intur",
+      "name": "INTUR",
+      "aliases": [
+        "Instituto Nicaragüense de Turismo"
+      ],
+      "type": "institution",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "tours",
+        "art"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    },
+    {
+      "id": "stereo-beso",
+      "name": "Stereo Beso",
+      "aliases": [],
+      "type": "organizer",
+      "country": "NI",
+      "city": "Managua",
+      "categories": [
+        "music",
+        "party"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    },
+    {
+      "id": "sabu-tours",
+      "name": "Sabu Tours",
+      "aliases": [],
+      "type": "tour-operator",
+      "country": "NI",
+      "city": "León",
+      "categories": [
+        "tours"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    },
+    {
+      "id": "el-paso-leon",
+      "name": "El Paso León",
+      "aliases": [],
+      "type": "venue",
+      "country": "NI",
+      "city": "León",
+      "categories": [
+        "food",
+        "music"
+      ],
+      "active": true,
+      "priority": 5,
+      "urls": {
+        "website": null,
+        "facebook": null,
+        "instagram": null,
+        "tiktok": null
+      },
+      "verification": {},
+      "lastReviewedAt": null,
+      "notes": "Por investigar: sin URLs verificadas."
+    }
+  ]
+}

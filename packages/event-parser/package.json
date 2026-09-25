@@ -1,0 +1,11 @@
+{
+  "name": "@turistero/event-parser",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": { "test": "vitest run" },
+  "dependencies": { "@turistero/config": "*", "@turistero/types": "*", "cheerio": "^1.2.0" },
+  "devDependencies": { "vitest": "^5.0.1" }
+}

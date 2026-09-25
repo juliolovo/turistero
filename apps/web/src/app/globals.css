@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #14123a;
+  --color-ink-2: #211e57;
+  --color-cal: #efede6;
+  --color-cal-2: #e4e1d6;
+  --color-cacao: #3a1f1a;
+  --color-rose: #ff3d7f;
+  --color-rose-deep: #d81b60;
+  --color-lagoon: #0f9d8f;
+  --color-mango: #ffc629;
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-cal);
+  color: var(--color-cacao);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Grano sutil solo en superficies de lista */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E");
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-rose);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.tint {
+  --tint: oklch(0.62 0.19 var(--hue, 350));
+  --tint-soft: oklch(0.93 0.05 var(--hue, 350));
+  --tint-deep: oklch(0.32 0.1 var(--hue, 350));
+}
+
+/* Única secuencia de entrada: el hero */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.hero-rise > * {
+  animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.hero-rise > *:nth-child(2) { animation-delay: 0.08s; }
+.hero-rise > *:nth-child(3) { animation-delay: 0.16s; }
+.hero-rise > *:nth-child(4) { animation-delay: 0.24s; }
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-cal-2) 25%, #f6f4ee 50%, var(--color-cal-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hero-rise > *, .skeleton { animation: none; }
+  * { transition-duration: 0.01ms !important; }
+}

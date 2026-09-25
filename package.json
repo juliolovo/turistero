@@ -12,7 +12,7 @@
     "dev": "npm run dev -w @turistero/web",
     "build": "npm run build -w @turistero/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present && node --test scripts/",
+    "test": "npm run test --workspaces --if-present && node --test scripts/check-secrets.test.mjs",
     "api": "npm run dev -w @turistero/api",
     "db:seed": "npm run seed -w @turistero/db",
     "e2e": "npm run e2e -w @turistero/e2e",

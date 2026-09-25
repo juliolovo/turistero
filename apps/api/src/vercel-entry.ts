@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { createDb } from "@turistero/db";
-import { createApp } from "../src/app";
+import { createApp } from "./app";
 
 // Punto de entrada serverless (Vercel). Requiere DATABASE_URL (Postgres/Neon); las migraciones se corren aparte (`npm run db:migrate`).
 let app: ReturnType<typeof createApp> | undefined;

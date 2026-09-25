@@ -1,0 +1,30 @@
+name: Revisión programada de fuentes
+
+# Llama cada hora a la API para que decida qué toca revisar según los horarios de cada persona
+# (por defecto lun/mié/vie 05:15 America/Managua) y los reintentos. La API es idempotente y aplica la
+# política de cortesía: como máximo una lectura por fuente al día (+1 reintento si falla por algo temporal).
+#
+# Inactivo hasta que definas la variable DISCOVERY_CRON_ENABLED=true, la variable API_URL
+# (p. ej. https://api.tu-dominio.com) y el secreto CRON_SECRET (el mismo que tiene la API).
+# Si tienes Vercel Pro puedes usar en su lugar un cron horario en apps/api/vercel.json.
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+jobs:
+  tick:
+    if: ${{ vars.DISCOVERY_CRON_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Llamar al planificador
+        env:
+          API_URL: ${{ vars.API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          test -n "$API_URL" && test -n "$CRON_SECRET"
+          curl --fail-with-body --silent --show-error --max-time 120 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$API_URL/api/cron/discovery" | tee tick.json

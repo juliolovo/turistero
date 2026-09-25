@@ -155,7 +155,7 @@ export const favoriteListQuerySchema = paginationSchema;
 
 /* ---------- usuarios ---------- */
 export const userSyncSchema = z.object({
-  provider: z.enum(["google", "facebook", "dev"]),
+  provider: z.enum(["google", "facebook", "microsoft-entra-id", "apple", "dev"]),
   providerAccountId: z.string().min(1).max(200),
   email: z.email().nullish(),
   emailVerified: z.boolean().default(false),
@@ -212,3 +212,31 @@ export const mySourcePatchSchema = z
   })
   .partial();
 export const subscriptionSchema = z.object({ enabled: z.boolean().optional(), alias: z.string().trim().max(80).nullable().optional() });
+
+/* ---------- usuario y contraseña ---------- */
+export const registerSchema = z.object({
+  email: z.email().max(200),
+  password: z.string().min(1).max(200),
+  name: z.string().trim().max(100).optional(),
+});
+export const loginSchema = z.object({ email: z.email().max(200), password: z.string().min(1).max(200) });
+
+/* ---------- horario de revisión personal ---------- */
+export const scheduleSchema = z.object({
+  enabled: z.boolean(),
+  days: z.array(z.number().int().min(0).max(6)).min(1, "Elige al menos un día").max(7),
+  hour: z.number().int().min(0).max(23),
+  minute: z.number().int().min(0).max(59),
+  timezone: z
+    .string()
+    .max(64)
+    .refine((tz) => {
+      try {
+        new Intl.DateTimeFormat("en", { timeZone: tz });
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Zona horaria inválida")
+    .optional(),
+});

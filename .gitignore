@@ -12,3 +12,6 @@ next-env.d.ts
 .vercel
 test-results
 playwright-report
+
+# Salida generada por build:vercel (función serverless)
+apps/api/api/

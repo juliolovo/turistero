@@ -1,9 +1,7 @@
-import { createDb, discoveryRuns, seedMockEvents, seedSources } from "@turistero/db";
-import { desc, eq } from "drizzle-orm";
+import { createDb, seedMockEvents, seedSources } from "@turistero/db";
 import { createSafeFetcher } from "@turistero/discovery";
 import { createApp } from "./app";
-import { runDiscovery } from "./discovery";
-import { startLocalScheduler } from "./scheduler";
+import { runScheduledTick } from "./tick";
 
 const port = Number(process.env.PORT ?? 4000);
 const handle = await createDb({ migrate: true, dataDir: process.env.PGLITE_DIR });
@@ -26,10 +24,10 @@ const app = createApp({
 app.listen(port, () => console.log(`API en http://localhost:${port} (db: ${handle.kind})`));
 
 if (process.env.ENABLE_LOCAL_CRON === "1") {
+  // Servidor propio (sin Vercel Cron): cada 10 minutos evalúa qué toca; la política de cortesía evita repeticiones.
   const deps = { db: handle.db, fetcher: createSafeFetcher() };
-  startLocalScheduler({
-    log: (m) => console.log(`[cron] ${m}`),
-    lastCronRun: async () => (await handle.db.select({ t: discoveryRuns.startedAt }).from(discoveryRuns).where(eq(discoveryRuns.trigger, "CRON")).orderBy(desc(discoveryRuns.startedAt)).limit(1))[0]?.t ?? null,
-    run: () => runDiscovery(deps, "CRON", { includePrivate: true, skipCheckedWithinHours: 6 }),
-  });
+  const t = setInterval(() => {
+    runScheduledTick(deps, { budgetMs: 120_000 }).then((r) => r.checked && console.log("[cron]", JSON.stringify(r))).catch((e) => console.log("[cron] falló:", (e as Error).message));
+  }, 10 * 60_000);
+  t.unref();
 }

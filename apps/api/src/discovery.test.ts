@@ -23,6 +23,7 @@ const fetchImpl = (async (input: URL | string) => {
 const ld = (o: object) => `<script type="application/ld+json">${JSON.stringify(o)}</script>`;
 const html = (head: string, body = "") => `<html><head><title>Sitio</title>${head}</head><body>${body}</body></html>`;
 
+let tickCount = 0;
 let handle: DbHandle;
 let app: ReturnType<typeof createApp>;
 
@@ -31,7 +32,7 @@ beforeAll(async () => {
   handle = await createDb({ migrate: true });
   await seedSources(handle.db);
   app = createApp({
-    db: handle.db, allowDevAuth: true, now: () => NOW,
+    db: handle.db, allowDevAuth: true, now: () => new Date(NOW.getTime() + tickCount++ * 1000), // reloj que avanza: evita empates entre revisiones
     fetcher: createSafeFetcher({ fetchImpl, resolveHost: async () => ["93.184.216.34"], hostDelayMs: 0 }),
     logger: (await import("pino")).pino({ level: "silent" }),
   });
@@ -188,22 +189,6 @@ describe("alta manual de eventos", () => {
     expect(ssrf.body.error.code).toBe("ACCESS_RESTRICTED");
     await request(app).post("/api/events/from-source-content").send({ text: "Salsa 26 sept 7pm en algún lugar" }).expect(401);
     await request(app).post("/api/events/from-source-content").set(staff).send({ url: "https://x.example/", text: "Salsa 26 sept 7pm en algún lugar" }).expect(400);
-  });
-});
-
-describe("cron", () => {
-  it("exige CRON_SECRET y continúa solo lo pendiente", async () => {
-    process.env.CRON_SECRET = "cron-secret-de-prueba-1234567890";
-    await request(app).get("/api/cron/discovery").expect(401);
-    await request(app).get("/api/cron/discovery").set("authorization", "Bearer incorrecto-incorrecto-incorrecto!").expect(401);
-    const first = await request(app).get("/api/cron/discovery").set("authorization", `Bearer ${process.env.CRON_SECRET}`).expect(200);
-    expect(first.body).toMatchObject({ status: expect.stringMatching(/COMPLETED|PARTIAL/), pending: 0 });
-    expect(first.body.sourcesChecked).toBeGreaterThan(5);
-    // Segunda ejecución inmediata: todo se revisó hace <6 h, no hay nada pendiente.
-    const second = await request(app).get("/api/cron/discovery").set("authorization", `Bearer ${process.env.CRON_SECRET}`).expect(200);
-    expect(second.body.sourcesChecked).toBe(0);
-    const runs = await request(app).get("/api/discovery-runs").set(staff);
-    expect(runs.body.items[0].trigger).toBe("CRON");
   });
 });
 

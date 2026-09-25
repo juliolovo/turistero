@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BRAND } from "@turistero/config";
 
 export function Footer() {
@@ -9,6 +10,11 @@ export function Footer() {
         <p>
           Cada evento enlaza a su publicación original. Los datos marcados como <strong className="text-mango">ejemplo</strong> son ficticios y
           existen solo para desarrollo.
+        </p>
+      <p className="flex flex-wrap gap-4 pt-2">
+          <Link href="/privacy" className="underline underline-offset-4 hover:text-white">Privacidad</Link>
+          <Link href="/terms" className="underline underline-offset-4 hover:text-white">Condiciones</Link>
+          <Link href="/data-deletion" className="underline underline-offset-4 hover:text-white">Eliminar mis datos</Link>
         </p>
       </div>
     </footer>

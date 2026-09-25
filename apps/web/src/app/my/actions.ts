@@ -63,3 +63,23 @@ export async function subscribeAction(f: FormData) {
     else await adminFetch(uid, `/my/subscriptions/${id}`, { method: "DELETE" }).catch((e) => { if (!(e instanceof ApiFailure && e.status === 404)) throw e; });
   }, on ? "Fuente añadida a tu agenda" : "Fuente quitada de tu agenda"));
 }
+
+export async function saveScheduleAction(f: FormData) {
+  const uid = await me();
+  const [h, m] = str(f, "time").split(":").map(Number);
+  const body = {
+    enabled: f.get("enabled") === "on",
+    days: f.getAll("days").map((d) => Number(d)),
+    hour: h ?? 5,
+    minute: m ?? 15,
+    timezone: str(f, "timezone") || undefined,
+  };
+  done(await attempt(() => adminFetch(uid, "/my/schedule", { method: "PUT", body: JSON.stringify(body) }), body.enabled ? "Horario guardado" : "Revisión automática desactivada"));
+}
+
+export async function markReadAction() {
+  const uid = await me();
+  await adminFetch(uid, "/my/notifications/read", { method: "POST" }).catch(() => {});
+  revalidatePath("/my");
+  redirect("/my");
+}

@@ -19,12 +19,36 @@ test.describe("mis fuentes y mi agenda", () => {
     await expect(page.getByText("Tours de Prueba", { exact: true })).toBeVisible();
 
     // Facebook sin conexión de Meta: no se finge una lectura
-    await page.getByRole("button", { name: "Revisar ahora" }).click();
+    await page.getByRole("button", { name: "Buscar ahora" }).click();
     await expect(page.getByRole("status")).toContainText("conexión de Meta");
+    // una revisión al día por fuente: el botón queda deshabilitado con la próxima hora posible
+    await expect(page.getByRole("button", { name: "Buscar ahora" })).toBeDisabled();
+    await expect(page.getByText(/Podrás volver a buscar ahora/)).toBeVisible();
 
     await page.getByRole("button", { name: "Eliminar" }).click();
     await expect(page.getByRole("status")).toContainText("Fuente eliminada");
     await expect(page.getByText("Tours de Prueba", { exact: true })).toHaveCount(0);
+  });
+
+  test("configurar mi horario de revisión y ver mis novedades", async ({ page }) => {
+    await loginAs(page, "horario", "/my");
+    await page.goto("/my");
+    await expect(page.getByRole("heading", { name: "¿Cuándo revisar?" })).toBeVisible();
+    // valores por defecto: lun/mié/vie 05:15
+    await expect(page.getByLabel("Hora", { exact: true })).toHaveValue("05:15");
+    await expect(page.getByLabel("Lun")).toBeChecked();
+    await expect(page.getByLabel("Mar")).not.toBeChecked();
+
+    await page.getByText("Mar", { exact: true }).click();
+    await page.getByText("Lun", { exact: true }).click();
+    await page.getByLabel("Hora", { exact: true }).fill("07:30");
+    await page.getByRole("button", { name: "Guardar horario" }).click();
+    await expect(page.getByRole("status")).toContainText("Horario guardado");
+    await expect(page.getByLabel("Hora", { exact: true })).toHaveValue("07:30");
+    await expect(page.getByLabel("Mar")).toBeChecked();
+    await expect(page.getByLabel("Lun")).not.toBeChecked();
+
+    await expect(page.getByRole("heading", { name: /Novedades/ })).toBeVisible();
   });
 
   test("suscribirse al catálogo y filtrar Mi agenda", async ({ page }) => {

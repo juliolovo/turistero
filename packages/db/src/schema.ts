@@ -22,6 +22,11 @@ export const users = pgTable("user", {
   image: text("image"),
   role: roleEnum("role").notNull().default("USER"),
   country: text("country").notNull().default("NI"),
+  timezone: text("timezone").notNull().default("America/Managua"),
+  /** Solo para cuentas con usuario/contraseña. Formato scrypt$N$r$p$salt$hash (ver password.ts). Nunca se devuelve por la API. */
+  passwordHash: text("password_hash"),
+  failedLogins: integer("failed_logins").notNull().default(0),
+  lockedUntil: ts("locked_until"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
@@ -66,6 +71,8 @@ export const sources = pgTable(
     /** null => fuente del catálogo global; con valor => fuente privada de ese usuario. */
     ownerId: text("owner_id").references(() => users.id, { onDelete: "cascade" }),
     lastReviewedAt: ts("last_reviewed_at"),
+    /** No nulo mientras se está revisando la fuente (para mostrar "Revisando ahora…"). */
+    scanningSince: ts("scanning_since"),
     notes: text("notes").notNull().default(""),
     createdAt: ts("created_at").notNull().defaultNow(),
     updatedAt: ts("updated_at").notNull().defaultNow(),
@@ -260,3 +267,37 @@ export const connections = pgTable(
   },
   (t) => [uniqueIndex("connection_unique").on(t.userId, t.provider, t.externalId)],
 );
+
+/** Horario de revisión automática de cada usuario (sus fuentes propias). Por defecto: lun/mié/vie 05:15 en su zona horaria. */
+export const userSchedules = pgTable("user_schedule", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  enabled: boolean("enabled").notNull().default(true),
+  days: integer("days").array().notNull().default([1, 3, 5]), // 0=domingo … 6=sábado
+  hour: integer("hour").notNull().default(5),
+  minute: integer("minute").notNull().default(15),
+  lastRunAt: ts("last_run_at"),
+});
+
+/** Avisos para el usuario: revisión iniciada, eventos nuevos, fallos. */
+export const notifications = pgTable(
+  "notification",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(), // SCAN_STARTED | NEW_EVENTS | SCAN_FAILED | INFO
+    sourceId: text("source_id"),
+    message: text("message").notNull(),
+    createdAt: ts("created_at").notNull().defaultNow(),
+    readAt: ts("read_at"),
+  },
+  (t) => [index("notification_user_idx").on(t.userId, t.createdAt)],
+);
+
+/** Solicitudes de eliminación de datos recibidas de Meta (callback obligatorio de la app). */
+export const dataDeletionRequests = pgTable("data_deletion_request", {
+  code: text("code").primaryKey(),
+  provider: text("provider").notNull(),
+  externalUserId: text("external_user_id").notNull(),
+  status: text("status").notNull().default("COMPLETED"), // PENDING | COMPLETED | NOT_FOUND
+  createdAt: ts("created_at").notNull().defaultNow(),
+});

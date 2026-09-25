@@ -163,13 +163,4 @@ describe("límites", () => {
     await request(app).post("/api/my/sources").set(who).send({ name: "Una más", urls: { website: "https://extra.example/" } }).expect(409);
   }, 60_000);
 
-  it("el cron revisa también las fuentes privadas y sus eventos siguen privados", async () => {
-    process.env.CRON_SECRET = "cron-secret-de-prueba-1234567890";
-    routes["https://diego.example/"] = { body: ld({ "@type": "Event", name: "Tour de Diego", startDate: "2026-10-01T06:00:00-06:00", location: { name: "Granada" } }) };
-    const who = { "x-dev-user": "diego:USER" };
-    await request(app).post("/api/my/sources").set(who).send({ name: "Diego Tours", city: "Granada", urls: { website: "https://diego.example/" } }).expect(201);
-    await request(app).get("/api/cron/discovery").set("authorization", `Bearer ${process.env.CRON_SECRET}`).expect(200);
-    expect(titles(await events(who))).toContain("Tour de Diego");
-    expect(titles(await events({}))).not.toContain("Tour de Diego");
-  }, 120_000);
 });

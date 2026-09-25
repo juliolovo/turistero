@@ -7,3 +7,7 @@ export * from "./users";
 export * from "./crypto";
 export * from "./connections";
 export * from "./my-sources";
+export * from "./password";
+export * from "./policy";
+export * from "./user-features";
+export * from "./meta-data";

@@ -2,7 +2,12 @@
   "name": "turistero",
   "private": true,
   "version": "0.0.0",
-  "workspaces": ["apps/*", "packages/*", "e2e"],
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "e2e",
+    "meta-app"
+  ],
   "scripts": {
     "dev": "npm run dev -w @turistero/web",
     "build": "npm run build -w @turistero/web",
@@ -12,7 +17,11 @@
     "db:seed": "npm run seed -w @turistero/db",
     "e2e": "npm run e2e -w @turistero/e2e",
     "db:migrate": "npm run migrate -w @turistero/db",
-    "db:generate": "npm run generate -w @turistero/db"
+    "db:generate": "npm run generate -w @turistero/db",
+    "meta:check": "npm run check -w @turistero/meta-app --",
+    "meta:token": "npm run token -w @turistero/meta-app --"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

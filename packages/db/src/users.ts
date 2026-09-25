@@ -37,6 +37,11 @@ export async function syncUser(db: Db, p: SyncProfile, adminEmails: string[] = [
   let user = linked?.u;
   if (!user && email && p.emailVerified) {
     user = (await db.select().from(users).where(eq(users.email, email)))[0];
+    // Anti "pre-secuestro": si esa cuenta existía con contraseña pero su correo nunca se verificó, quien la creó pudo no ser
+    // el dueño del correo. Al reclamarla el dueño real (correo verificado por el proveedor) se invalida la contraseña.
+    if (user?.passwordHash && !user.emailVerified) {
+      await db.update(users).set({ passwordHash: null, failedLogins: 0, lockedUntil: null }).where(eq(users.id, user.id));
+    }
   }
   if (!user) {
     // Si el correo ya existe pero no está verificado por este proveedor, se crea el usuario sin correo (no se secuestra la cuenta).

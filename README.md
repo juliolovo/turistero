@@ -2,7 +2,8 @@
 
 Agrega en un solo lugar los **viajes, tours y eventos** que publican tus operadoras y lugares favoritos (Facebook, Instagram, webs), sin tener que revisarlos uno a uno. Multi-país por diseño; Nicaragua (Managua, León…) es el catálogo semilla.
 
-> **Estado**: fases 1–7 implementadas (web, API, BD, auth, discovery, admin, cron, tests). Lo que falta para producción real está en [Pendiente](#pendiente).
+> **Estado**: fases 1–7 implementadas más agenda personal, horarios por usuario, avisos, 5 métodos de acceso, Meta App documentada y pipelines. Lo que falta para producción real está en [Pendiente](#pendiente).
+> Guías: [`docs/DEPLOY.md`](docs/DEPLOY.md) (Neon + Vercel + GitHub) · [`docs/AUTH.md`](docs/AUTH.md) (proveedores de login) · [`meta-app/README.md`](meta-app/README.md) (Meta App: qué se puede y qué no, registro y App Review).
 > Los eventos que ves con la semilla de desarrollo son **datos de ejemplo** (`isMock`): se rotulan “Ejemplo” en la UI, no se indexan y jamás enlazan a una publicación inventada.
 
 ## Principios (no negociables)
@@ -24,6 +25,8 @@ packages/db            Drizzle ORM: esquema, migraciones, consultas, cifrado de 
 packages/mocks         eventos de ejemplo
 config/sources.json    catálogo de fuentes versionado (semilla / respaldo)
 e2e/                   Playwright (usa el Chrome instalado)
+meta-app/              guía + manifiesto + textos de App Review + scripts de verificación de la Meta App
+docs/                  DEPLOY.md, AUTH.md      .github/workflows  CI, deploy (apagado por defecto), cron horario
 ```
 Decisiones: **Drizzle** (ligero, SQL-first, Neon) · **PGlite** en dev/tests y Postgres real con `DATABASE_URL` (mismo esquema y migraciones) · web y API separados, la web firma un JWT de 2 min para hablar con la API en nombre del usuario y **el rol se lee siempre de la BD** · npm workspaces (sin pnpm).
 
@@ -36,6 +39,7 @@ npm run dev        # web en :3000 (lee apps/web/.env.local)
 npm test           # unit + integración (config, event-parser, discovery, API)
 npm run typecheck
 npm run e2e        # Playwright con Chrome instalado; levanta API :4100 y web :3100
+npm run meta:check # verifica tu token y tu Meta App (solo lectura; ver meta-app/README.md)
 ```
 Sin `API_URL` la web funciona sola con mocks en memoria. Copia `.env.example` para ver todas las variables.
 
@@ -80,10 +84,9 @@ Estados de auditoría: `SUCCESS · NO_EVENTS · NO_RECENT_CONTENT · ACCESS_REST
   - Aún no hay flujo OAuth de “conectar Meta” en la UI: requiere App Review y verificar los scopes vigentes. Mientras, `META_FB_TOKEN` / `META_IG_TOKEN` + `META_IG_USER_ID` permiten probar.
 
 ## Auth
-Auth.js v5, sesión JWT. En cada login la web llama a `/api/internal/users/sync` (token de servicio) y guarda `{uid, role}`. Vinculación por correo solo si el proveedor lo verifica (Google); `ADMIN_EMAILS` solo concede ADMIN con correo verificado. Roles: `USER` (favoritos, filtros guardados), `EDITOR` (eventos, fuentes, candidatos, corridas), `ADMIN` (usuarios, borrado, import, conexiones).
-- **Google**: Google Cloud Console → Credenciales → ID de cliente OAuth (web). Redirect: `http://localhost:3000/api/auth/callback/google`. `AUTH_GOOGLE_ID/SECRET`.
-- **Facebook**: developers.facebook.com → app + *Facebook Login*; redirect `http://localhost:3000/api/auth/callback/facebook`; `AUTH_FACEBOOK_ID/SECRET`. Para producción: modo *Live*, política de privacidad y URL de eliminación de datos.
-- **Desarrollo sin credenciales**: `ALLOW_DEV_LOGIN=1` (web) + `ALLOW_DEV_AUTH=1` (API) habilita “Entrar como usuario de prueba”; el usuario `admin` es ADMIN si `ADMIN_EMAILS=admin@dev.local`. Ignorados en producción.
+Cinco métodos: **usuario y contraseña**, **Google**, **Meta (Facebook)**, **Microsoft** y **Apple** (Instagram no es un login: solo cuentas profesionales). Detalle, credenciales y reglas de seguridad en [`docs/AUTH.md`](docs/AUTH.md). Roles: `USER` (favoritos, fuentes propias, horario), `EDITOR` (eventos, fuentes, candidatos, corridas), `ADMIN` (usuarios, borrado, import, conexiones).
+- Vinculación por correo solo con proveedores que lo verifican (Google, Apple); anti pre-secuestro de cuentas con contraseña; bloqueo tras 5 intentos fallidos.
+- En desarrollo: `ALLOW_DEV_LOGIN=1` (web) + `ALLOW_DEV_AUTH=1` (API); el usuario `admin` es ADMIN si `ADMIN_EMAILS=admin@dev.local`.
 - Si la API ya no reconoce la cookie (BD reiniciada), la web cierra la sesión sola (`/auth/expired`).
 
 ## Mis fuentes y mi agenda (`/my`)
@@ -95,13 +98,15 @@ Cada usuario arma su propia lista: **fuentes propias** (pega el sitio, RSS, Face
 ## Administración (`/admin`, EDITOR+)
 Resumen · **Fuentes** (editar, activar/desactivar, revisar ahora, abrir Facebook/Instagram, eliminar (ADMIN), historial, import/export) · **Estado de fuentes** (`/admin/sources/status`: última revisión, publicaciones revisadas, eventos, motivo; racha de fallos) · **Candidatos** (aprobar, rechazar, fusionar sin pisar URLs) · **Eventos** (aprobar, ocultar, editar, fusionar duplicados) · **Agregar evento** (URL o texto) · **Corridas** (`/admin/runs`, *Ejecutar búsqueda ahora*) · Usuarios y Conexiones Meta (ADMIN).
 
-## Cron
-Lunes, miércoles y viernes **05:15 America/Managua** (= 11:15 UTC; Managua no usa horario de verano).
-- **Vercel**: `apps/api/vercel.json` define tres disparos (11:15, 11:25, 11:35 UTC) sobre `GET /api/cron/discovery` (`Authorization: Bearer $CRON_SECRET`). Cada ejecución tiene presupuesto de tiempo (`CRON_BUDGET_MS`, 45 s) y solo procesa fuentes no revisadas en las últimas 6 h, así que las siguientes continúan lo pendiente.
-- **Servidor propio**: `ENABLE_LOCAL_CRON=1` arranca un planificador en proceso (tolera reinicios: corre al volver si se perdió la hora).
-- **Manual**: *Ejecutar búsqueda ahora* en el admin (no depende del cron).
+## Revisión programada (cron), cortesía y avisos
+Nada se revisa "a cada rato" ni con un navegador: solo **peticiones HTTP puntuales** (sin Chrome), respetando `robots.txt`, con espera entre peticiones al mismo sitio y APIs oficiales de Meta.
+- **Una lectura por fuente al día** (`MIN_RECHECK_HOURS=24`) y, si falla por algo temporal (red, límite de peticiones), **un reintento pasada 1 hora**. `AUTH_REQUIRED`, `ACCESS_RESTRICTED` y `NOT_FOUND` no se reintentan. Vale también para **Buscar ahora**.
+- **Horario por persona** (`/my` → *¿Cuándo revisar?*): días, hora y zona horaria; por defecto **lunes, miércoles y viernes 05:15**. Cada fuente propia se revisa en el horario de su dueño; el catálogo compartido, lun/mié/vie 05:15 America/Managua.
+- **Planificador** `GET /api/cron/discovery` (`Bearer $CRON_SECRET`): idempotente; decide qué toca. Se llama con **Vercel Cron** (diario, plan Hobby), **GitHub Actions** (cada hora, `scheduled-discovery.yml`) o `ENABLE_LOCAL_CRON=1` (proceso propio). Ver `docs/DEPLOY.md` §6.
+- **Alertas**: mientras se revisa, la fuente muestra “🔎 revisando ahora” (la página se actualiza sola); al terminar recibes *Novedades* (“🆕 N eventos nuevos en X”, “⚠️ no pudimos revisar X”) y el menú muestra cuántas no has leído. Al iniciar una revisión programada se te avisa “Estamos revisando ahora tus fuentes”.
+- **Auditoría** (`/admin/sources/status`): todas las fuentes activas quedan registradas en cada corrida.
 
-## Despliegue en Vercel
+## Despliegue en Vercel (resumen; guía completa en [`docs/DEPLOY.md`](docs/DEPLOY.md))
 - **web**: proyecto con root `apps/web`. Variables: `API_URL`, `API_SERVICE_TOKEN`, `API_JWT_SECRET`, `AUTH_SECRET`, `AUTH_GOOGLE_*`, `AUTH_FACEBOOK_*`, `NEXT_PUBLIC_SITE_URL`.
 - **api**: proyecto con root `apps/api` (`api/index.ts` + `vercel.json`). Variables: `DATABASE_URL`, `API_SERVICE_TOKEN`, `API_JWT_SECRET`, `ADMIN_EMAILS`, `CORS_ORIGINS`, `CRON_SECRET`, `TOKEN_ENCRYPTION_KEY`. Migraciones aparte (`npm run db:migrate`).
 - `sitemap.xml` excluye los datos de ejemplo; genera `JSON-LD Event`, metadata y canonical por evento.
@@ -114,7 +119,9 @@ Auth de la API: `Bearer $API_SERVICE_TOKEN` (servidor a servidor), `Bearer <JWT>
 `npm test`: **config** (fechas/zonas/títulos), **event-parser** (fechas, precios, clasificación, deduplicación, HTML, extracción), **discovery** (fetch seguro/SSRF/robots, adaptadores, Graph API simulada), **API** (integración con PGlite: eventos, fuentes, auth/JWT/roles, discovery de punta a punta, cron, conexiones cifradas). `npm run e2e`: home, filtros, búsqueda, lista/cards, detalle, login, favoritos, admin, móvil, teclado.
 
 ## Pendiente
-- Flujo OAuth “Conectar Meta” en la UI (requiere App Review y confirmar scopes vigentes) y proveedor real para `SearchAdapter`.
+- Registrar la Meta App y pasar App Review (todo lo necesario está en [`meta-app/`](meta-app/README.md)); flujo OAuth “Conectar Meta” en la UI, que depende de esa aprobación; proveedor real para `SearchAdapter`.
+- Recuperación de contraseña y verificación de correo (requieren un servicio de correo).
+- Registrar los proveedores de login (Google, Microsoft, Apple) con tus credenciales y desplegar (pipelines listos, apagados).
 - Investigar Instagram/web oficiales de las fuentes sin URLs y verificar sus vínculos.
 - Conexión de Meta por usuario (hoy se usa la del administrador) y más países/ciudades (el catálogo de lugares aún es solo Nicaragua).
 - Recomendaciones más allá de “También podría interesarte” (por ahora: recencia + ciudad).

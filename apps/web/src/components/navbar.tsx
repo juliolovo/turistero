@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Heart, LogIn, LogOut, MapPinned } from "lucide-react";
 import { BRAND } from "@turistero/config";
 import { auth, signOut } from "@/auth";
+import { apiAs, apiConfigured } from "@/lib/session-api";
 
 const links = [
   { href: "/#eventos", label: "Eventos" },
@@ -14,6 +15,16 @@ export async function Navbar() {
   const session = await auth();
   const user = session?.user;
   const staff = user?.role === "EDITOR" || user?.role === "ADMIN";
+  let unread = 0;
+  if (user && apiConfigured()) {
+    try {
+      const r = await apiAs(user.id, "/my/notifications/unread-count");
+      if (r.ok) unread = ((await r.json()) as { unread: number }).unread;
+    } catch {
+      /* sin API: sin contador */
+    }
+  }
+  const myLabel = unread > 0 ? `Mis fuentes (${unread})` : "Mis fuentes";
 
   return (
     <header className="bg-ink text-white">
@@ -30,7 +41,7 @@ export async function Navbar() {
               {l.label}
             </Link>
           ))}
-          {user && <Link href="/my" className="rounded-full px-3 py-1.5 text-sm text-white/85 transition hover:bg-white/10 hover:text-white">Mis fuentes</Link>}
+          {user && <Link href="/my" className="rounded-full px-3 py-1.5 text-sm text-white/85 transition hover:bg-white/10 hover:text-white">{myLabel}</Link>}
           {staff && (
             <Link href="/admin" className="rounded-full px-3 py-1.5 text-sm text-mango transition hover:bg-white/10">Admin</Link>
           )}
@@ -62,7 +73,7 @@ export async function Navbar() {
             {l.label}
           </Link>
         ))}
-        {user && <Link href="/my" className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-sm">Mis fuentes</Link>}
+        {user && <Link href="/my" className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-sm">{myLabel}</Link>}
         {staff && <Link href="/admin" className="shrink-0 rounded-full bg-mango px-3 py-1 text-sm text-ink">Admin</Link>}
       </nav>
     </header>

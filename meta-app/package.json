@@ -1,0 +1,12 @@
+{
+  "name": "@turistero/meta-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node scripts/check-meta.mjs",
+    "token": "node scripts/long-lived-token.mjs",
+    "test": "vitest run"
+  },
+  "devDependencies": { "vitest": "^5.0.1" }
+}

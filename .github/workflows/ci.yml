@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Typecheck, tests y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests (unitarios e integración; PGlite en memoria, sin servicios externos)
+        run: npm test
+      - name: Build de la web
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://ci.example
+      - name: Build de la función serverless de la API
+        run: npm run build:vercel -w @turistero/api
+
+  e2e:
+    name: E2E (Playwright + Chrome)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # `channel: "chrome"` usa el Chrome que ya trae ubuntu-latest: no se descargan navegadores.
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: e2e/test-results
+          retention-days: 7

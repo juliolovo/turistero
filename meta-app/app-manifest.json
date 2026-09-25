@@ -1,0 +1,42 @@
+{
+  "$comment": "Valores para pegar en Meta for Developers. Sustituye TU-WEB y TU-API por tus dominios. NO guardes aquí el App Secret.",
+  "app": {
+    "displayName": "Turistero",
+    "category": "Travel & Transportation",
+    "contactEmail": "contacto@TU-DOMINIO",
+    "privacyPolicyUrl": "https://TU-WEB/privacy",
+    "termsOfServiceUrl": "https://TU-WEB/terms",
+    "userDataDeletion": { "type": "callback", "url": "https://TU-API/api/meta/data-deletion" },
+    "appDomains": ["TU-WEB", "TU-API"],
+    "iconSize": "1024x1024"
+  },
+  "products": {
+    "facebookLogin": {
+      "validOAuthRedirectUris": [
+        "https://TU-WEB/api/auth/callback/facebook",
+        "http://localhost:3000/api/auth/callback/facebook"
+      ],
+      "deauthorizeCallbackUrl": "https://TU-API/api/meta/deauthorize",
+      "clientOAuthLogin": true,
+      "webOAuthLogin": true,
+      "enforceHttps": true
+    },
+    "instagram": { "variant": "API with Facebook Login", "note": "Solo cuentas profesionales (Business/Creator)" }
+  },
+  "permissions": {
+    "noReviewNeeded": ["public_profile"],
+    "requestInAppReview": ["email", "pages_show_list", "instagram_basic", "pages_read_engagement"],
+    "features": ["Page Public Content Access"],
+    "doNotRequest": ["user_posts", "user_friends", "user_likes", "pages_messaging", "publish_*"]
+  },
+  "environmentVariables": {
+    "web": ["AUTH_FACEBOOK_ID", "AUTH_FACEBOOK_SECRET", "NEXT_PUBLIC_SITE_URL"],
+    "api": ["META_APP_SECRET", "TOKEN_ENCRYPTION_KEY", "NEXT_PUBLIC_SITE_URL", "META_GRAPH_VERSION"]
+  },
+  "policy": {
+    "readsPerSourcePerDay": 1,
+    "retryAfterFailure": "1 retry after 60 minutes for transient errors only",
+    "browserAutomation": false,
+    "scraping": false
+  }
+}

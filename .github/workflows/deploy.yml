@@ -1,0 +1,84 @@
+name: Deploy
+
+# NO despliega nada hasta que actives la variable de repositorio DEPLOY_ENABLED=true
+# (Settings → Secrets and variables → Actions → Variables). Guía completa: docs/DEPLOY.md
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+jobs:
+  check:
+    name: Verificar antes de desplegar
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  migrate:
+    name: Migrar la base de datos (Neon / Postgres)
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Las migraciones son aditivas (drizzle-kit generate). Revisa packages/db/drizzle antes de mezclar a main.
+      - run: npm run db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  deploy-api:
+    name: Desplegar API (Vercel)
+    needs: migrate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # El proyecto de Vercel tiene Root Directory = apps/api; los comandos se ejecutan desde la raíz del repo.
+      - run: npx vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - run: npx vercel@latest build --prod --token="$VERCEL_TOKEN"
+      - run: npx vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+  deploy-web:
+    name: Desplegar web (Vercel)
+    needs: deploy-api
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npx vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - run: npx vercel@latest build --prod --token="$VERCEL_TOKEN"
+      - run: npx vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"

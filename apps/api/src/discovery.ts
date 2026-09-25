@@ -1,9 +1,9 @@
-import { and, eq, gte, isNull, lt, or } from "drizzle-orm";
-import { PLACES, dayKey, getPlace, placesOf } from "@turistero/config";
+import { and, desc, eq, gte, isNull, lt, or } from "drizzle-orm";
+import { PLACES, dayKey, getPlace, placesOf, zonedParts } from "@turistero/config";
 import { checkSourceContent, createSafeFetcher, defaultAdapters, newLinksOnly, type Credential, type DiscoverySource, type SafeFetcher, type SourceAdapter } from "@turistero/discovery";
 import { dedupeKey, extractCandidate, fold, isDuplicate, slugify, type EventCandidate, type SourceContent } from "@turistero/event-parser";
 import {
-  completeRun, createCandidate, createRun, eventSources, events, getCredential, listActiveSources, markConnectionError, newId, recordCheck, sourceCandidates, sources,
+  checkDecision, completeRun, createCandidate, createRun, eventSources, events, getCredential, getSchedule, listActiveSources, markConnectionError, markScheduleRun, newId, notify, recordCheck, sourceCandidates, sourceChecks, sources, usersWithPrivateSources,
   type CheckRow, type Db, type SourceRow,
 } from "@turistero/db";
 
@@ -127,10 +127,34 @@ export function candidatesFromContents(contents: SourceContent[], source: Pick<S
 /* ------------------------------------------------------------------------------------------------
  * Revisión de una fuente
  * ---------------------------------------------------------------------------------------------- */
-export async function checkOne(deps: DiscoveryDeps, s: SourceRow, runId?: string): Promise<{ check: CheckRow; newEvents: number }> {
+export const SCAN_STALE_MS = 10 * 60_000;
+
+/** ¿Se está revisando ahora mismo? (ignora marcas viejas de un proceso que murió a medias) */
+export const isScanning = (s: Pick<SourceRow, "scanningSince">, now = new Date()) => !!s.scanningSince && now.getTime() - s.scanningSince.getTime() < SCAN_STALE_MS;
+
+export async function checkOne(deps: DiscoveryDeps, s: SourceRow, runId?: string, opts: { trigger?: "manual" | "scheduled" } = {}): Promise<{ check: CheckRow; newEvents: number }> {
   const { db } = deps;
   const now = (deps.now ?? (() => new Date()))();
-  const startedAt = new Date();
+  const startedAt = now; // el reloj inyectable (deps.now) permite probar horarios y política de cortesía
+  await db.update(sources).set({ scanningSince: startedAt }).where(eq(sources.id, s.id));
+  try {
+    const out = await scanSource(deps, s, runId, now, startedAt);
+    // Avisos para el dueño de una fuente propia
+    if (s.ownerId) {
+      const st = out.check.status;
+      if (out.newEvents > 0) await notify(db, s.ownerId, "NEW_EVENTS", `🆕 ${out.newEvents} evento(s) nuevo(s) encontrado(s) en ${s.name}.`, s.id);
+      else if (["ERROR", "RATE_LIMITED", "NOT_FOUND", "ACCESS_RESTRICTED", "AUTH_REQUIRED"].includes(st) && opts.trigger === "scheduled") {
+        await notify(db, s.ownerId, "SCAN_FAILED", `No pudimos revisar ${s.name} (${st}). ${st === "ERROR" || st === "RATE_LIMITED" ? "Se reintentará en 1 hora." : out.check.message}`.slice(0, 300), s.id);
+      }
+    }
+    return out;
+  } finally {
+    await db.update(sources).set({ scanningSince: null }).where(eq(sources.id, s.id));
+  }
+}
+
+async function scanSource(deps: DiscoveryDeps, s: SourceRow, runId: string | undefined, now: Date, startedAt: Date): Promise<{ check: CheckRow; newEvents: number }> {
+  const { db } = deps;
   const fetcher = deps.fetcher ?? createSafeFetcher();
   const creds = await loadCredentials(db);
   const src: DiscoverySource = { id: s.id, name: s.name, type: s.type, city: s.city, urls: s.urls, verification: s.verification };

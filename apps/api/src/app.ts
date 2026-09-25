@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import express, { Router } from "express";
 import cors from "cors";
 import { z } from "zod";
+import { and, eq, gte, inArray } from "drizzle-orm";
 import { slugify } from "@turistero/event-parser";
 import helmet from "helmet";
 import { pino, type Logger } from "pino";
@@ -9,15 +10,17 @@ import { pinoHttp } from "pino-http";
 import type { Db } from "@turistero/db";
 import {
   deleteConnection, listConnections, saveConnection, actOnCandidate, addFavorite, createSavedFilter, deleteSavedFilter, getUser, listSavedFilters, listUsers, setRole, syncUser, createCandidate, createSource, deleteSource, exportSources, getEvent, getSourceRow, importSources,
-  failureStreaks, latestChecks, mergeEvents, createPrivateSource, deletePrivateSource, getOwnedSource, listMySources, mySourceIds, patchPrivateSource, removeSubscription, setSubscription, MAX_PRIVATE_SOURCES, listCandidates, listChecks, listEvents, listFavorites, listRuns, listSources, patchSource, removeFavorite, rowToSource, updateEvent,
+  failureStreaks, latestChecks, mergeEvents, checkDecision, getSchedule, setSchedule, listNotifications, markAllRead, unreadCount, registerPasswordUser, verifyLogin, sourceChecks, sources as sourcesTable, createPrivateSource, deletePrivateSource, getOwnedSource, listMySources, mySourceIds, patchPrivateSource, removeSubscription, setSubscription, MAX_PRIVATE_SOURCES, listCandidates, listChecks, listEvents, listFavorites, listRuns, listSources, patchSource, removeFavorite, rowToSource, updateEvent,
 } from "@turistero/db";
 import {
   candidateActionSchema, candidateCreateSchema, eventPatchSchema, eventQuerySchema, favoriteListQuerySchema, importSourcesSchema,
-  paginationSchema, runCreateSchema, mySourceCreateSchema, mySourcePatchSchema, subscriptionSchema, connectionCreateSchema, eventFromSchema, savedFilterCreateSchema, userRolePatchSchema, userSyncSchema, sourceCreateSchema, sourceListQuerySchema, sourcePatchSchema,
+  paginationSchema, runCreateSchema, scheduleSchema, registerSchema, loginSchema, mySourceCreateSchema, mySourcePatchSchema, subscriptionSchema, connectionCreateSchema, eventFromSchema, savedFilterCreateSchema, userRolePatchSchema, userSyncSchema, sourceCreateSchema, sourceListQuerySchema, sourcePatchSchema,
 } from "@turistero/schemas";
 import { CATEGORIES, COUNTRIES, PLACES, FREE_EMOJI, NEW_EMOJI } from "@turistero/config";
 import { authenticate, requireRole, requireService } from "./auth";
-import { checkOne, candidatesFromContents, persistCandidate, runDiscovery, type DiscoveryDeps } from "./discovery";
+import { checkOne, candidatesFromContents, isScanning, persistCandidate, runDiscovery, type DiscoveryDeps } from "./discovery";
+import { runScheduledTick } from "./tick";
+import { registerMetaCallbacks } from "./meta-callbacks";
 import { contentFromText, contentFromUrl, createSafeFetcher, type SafeFetcher, type SourceAdapter } from "@turistero/discovery";
 import { HttpError, errorHandler, notFound, notFoundHandler } from "./http";
 
@@ -43,6 +46,7 @@ export function createApp({ db, logger, serviceToken, jwtSecret, adminEmails = [
   app.use(helmet());
   app.use(cors({ origin: corsOrigins?.length ? corsOrigins : false }));
   app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ extended: false, limit: "10kb" })); // callbacks de Meta (signed_request)
   app.use(pinoHttp({ logger: log, autoLogging: { ignore: (r) => r.url === "/health" } }));
   app.use(authenticate(db, { serviceToken, jwtSecret, allowDev: allowDevAuth }));
 
@@ -199,7 +203,24 @@ export function createApp({ db, logger, serviceToken, jwtSecret, adminEmails = [
   });
 
   /* ---------- agenda personal: fuentes propias y suscripciones ---------- */
-  api.get("/my/sources", user, async (req, res) => res.json({ ...(await listMySources(db, req.user!.id)), limit: MAX_PRIVATE_SOURCES }));
+  api.get("/my/sources", user, async (req, res) => {
+    const mine = await listMySources(db, req.user!.id);
+    const ids = mine.private.map((s) => s.id);
+    const now = (deps.now ?? (() => new Date()))();
+    const checks = ids.length
+      ? await db.select({ sourceId: sourceChecks.sourceId, startedAt: sourceChecks.startedAt, status: sourceChecks.status, message: sourceChecks.message })
+          .from(sourceChecks).where(and(inArray(sourceChecks.sourceId, ids), gte(sourceChecks.startedAt, new Date(now.getTime() - 48 * 3_600_000))))
+      : [];
+    const rows = ids.length ? await db.select({ id: sourcesTable.id, scanningSince: sourcesTable.scanningSince }).from(sourcesTable).where(inArray(sourcesTable.id, ids)) : [];
+    const scanning = new Map(rows.map((r) => [r.id, isScanning(r, now)]));
+    const priv = mine.private.map((s) => {
+      const mine = checks.filter((c) => c.sourceId === s.id);
+      const d = checkDecision(mine, now);
+      const last = [...mine].sort((a, b) => +b.startedAt - +a.startedAt)[0];
+      return { ...s, scanning: scanning.get(s.id) ?? false, nextCheckAt: d.ok ? null : d.retryAt.toISOString(), lastStatus: last?.status ?? null, lastMessage: last?.message ?? null };
+    });
+    res.json({ ...mine, private: priv, limit: MAX_PRIVATE_SOURCES });
+  });
   api.post("/my/sources", user, async (req, res) => {
     const body = mySourceCreateSchema.parse(req.body);
     if (!body.urls.website && !body.urls.facebook && !body.urls.instagram && !body.urls.rss) {
@@ -222,12 +243,32 @@ export function createApp({ db, logger, serviceToken, jwtSecret, adminEmails = [
   api.post("/my/sources/:id/check", user, async (req, res) => {
     const s = await getOwnedSource(db, req.user!.id, p(req.params.id));
     if (!s) throw notFound("Fuente");
-    // Cortesía con los sitios revisados: como máximo una revisión manual cada 5 minutos por fuente.
-    const now = (deps.now ?? (() => new Date()))().getTime();
-    if (s.lastReviewedAt && now - s.lastReviewedAt.getTime() < 5 * 60_000) throw new HttpError(429, "RATE_LIMITED", "Esta fuente se revisó hace menos de 5 minutos");
-    const r = await checkOne(deps, s);
+    const now = (deps.now ?? (() => new Date()))();
+    if (isScanning(s, now)) throw new HttpError(409, "SCANNING", "Esta fuente se está revisando ahora mismo.");
+    // Cortesía con los sitios: una revisión por fuente al día (+1 reintento si la anterior falló).
+    const recent = await db.select({ startedAt: sourceChecks.startedAt, status: sourceChecks.status }).from(sourceChecks)
+      .where(and(eq(sourceChecks.sourceId, s.id), gte(sourceChecks.startedAt, new Date(now.getTime() - 48 * 3_600_000))));
+    const d = checkDecision(recent, now);
+    if (!d.ok) throw new HttpError(429, "RATE_LIMITED", `${d.reason} Próxima revisión posible: ${d.retryAt.toISOString()}`);
+    const r = await checkOne(deps, s, undefined, { trigger: "manual" });
     res.status(201).json({ ...r.check, newEvents: r.newEvents });
   });
+
+  /* ---------- horario personal de revisión y avisos ---------- */
+  api.get("/my/schedule", user, async (req, res) => res.json(await getSchedule(db, req.user!.id)));
+  api.put("/my/schedule", user, async (req, res) => {
+    res.json(await setSchedule(db, req.user!.id, scheduleSchema.parse(req.body)));
+  });
+  api.get("/my/notifications", user, async (req, res) => {
+    const [items, unread] = await Promise.all([listNotifications(db, req.user!.id), unreadCount(db, req.user!.id)]);
+    res.json({ items, unread });
+  });
+  api.get("/my/notifications/unread-count", user, async (req, res) => res.json({ unread: await unreadCount(db, req.user!.id) }));
+  api.post("/my/notifications/read", user, async (req, res) => {
+    await markAllRead(db, req.user!.id);
+    res.status(204).end();
+  });
+
   api.put("/my/subscriptions/:sourceId", user, async (req, res) => {
     if (!(await setSubscription(db, req.user!.id, p(req.params.sourceId), subscriptionSchema.parse(req.body ?? {})))) throw notFound("Fuente del catálogo");
     res.status(204).end();
@@ -281,17 +322,34 @@ export function createApp({ db, logger, serviceToken, jwtSecret, adminEmails = [
     res.status(204).end();
   });
 
-  /* ---------- cron (Vercel Cron llama por GET con `Authorization: Bearer $CRON_SECRET`) ---------- */
+  /* ---------- cron: el planificador (Vercel Cron / GitHub Actions / proceso propio) llama por GET cada hora ---------- */
+  // `Authorization: Bearer $CRON_SECRET`. Idempotente: decide qué toca según los horarios y la política de cortesía.
   api.get("/cron/discovery", async (req, res) => {
     const secret = process.env.CRON_SECRET;
     const given = req.header("authorization")?.replace(/^Bearer\s+/i, "");
     if (!secret || !given || given.length !== secret.length || !timingSafeEqual(Buffer.from(given), Buffer.from(secret))) {
       throw new HttpError(401, "UNAUTHENTICATED", "Cron no autorizado");
     }
-    // Lunes, miércoles y viernes 05:15 America/Managua (11:15 UTC). Las ejecuciones extra continúan lo pendiente.
-    const run = await runDiscovery(deps, "CRON", { includePrivate: true, skipCheckedWithinHours: 6, budgetMs: Number(process.env.CRON_BUDGET_MS ?? 45_000) });
-    res.json(run);
+    res.json(await runScheduledTick(deps, { budgetMs: Number(process.env.CRON_BUDGET_MS ?? 45_000) }));
   });
+
+  /* ---------- registro y acceso con usuario y contraseña (solo la web, con token de servicio) ---------- */
+  api.post("/internal/auth/register", requireService, async (req, res) => {
+    const b = registerSchema.parse(req.body);
+    const r = await registerPasswordUser(db, b);
+    if (r === "exists") throw new HttpError(409, "EXISTS", "Ya existe una cuenta con ese correo.");
+    if ("problems" in r) throw new HttpError(422, "WEAK_PASSWORD", r.problems.join(" "));
+    res.status(201).json({ id: r.id, role: r.role, name: r.name, email: r.email });
+  });
+  api.post("/internal/auth/verify", requireService, async (req, res) => {
+    const b = loginSchema.parse(req.body);
+    const r = await verifyLogin(db, b.email, b.password);
+    if (r === "invalid") throw new HttpError(401, "INVALID_CREDENTIALS", "Correo o contraseña incorrectos.");
+    if ("locked" in r) throw new HttpError(429, "LOCKED", "Demasiados intentos. Vuelve a intentarlo en unos minutos.");
+    res.json({ id: r.id, role: r.role, name: r.name, email: r.email, image: r.image });
+  });
+
+  registerMetaCallbacks(api, { db });
 
   /* ---------- favoritos ---------- */
   api.get("/favorites", user, async (req, res) => {

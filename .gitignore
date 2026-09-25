@@ -1,17 +1,56 @@
+# Dependencias y builds
 node_modules
 .next
 dist
-.env
-.env.local
 .turbo
 *.tsbuildinfo
 next-env.d.ts
-
-.pglite
-*.log
-.vercel
+apps/api/api/
 test-results
 playwright-report
+*.log
 
-# Salida generada por build:vercel (función serverless)
-apps/api/api/
+# ─── SECRETOS Y DATOS SENSIBLES: nunca se versionan ───────────────────────────
+# Variables de entorno (solo se versiona .env.example, que no lleva valores reales)
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+# Claves, certificados y credenciales
+*.pem
+*.p8
+*.p12
+*.pfx
+*.key
+*.jks
+*.keystore
+*.ppk
+id_rsa*
+id_ed25519*
+service-account*.json
+client_secret*.json
+credentials.json
+secrets.json
+tokens.json
+secrets/
+.netrc
+.npmrc.local
+# Datos y credenciales locales
+.pglite
+.vercel
+*.sqlite
+*.sqlite3
+*.db
+# Copias de seguridad y volcados de base de datos
+*.dump
+*.sql.gz
+*.bak
+backups/
+# Editor / sistema
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

@@ -57,20 +57,17 @@ No existe un "login con Instagram" para usuarios comunes: la API de Instagram so
    AUTH_FACEBOOK_SECRET=<App Secret>
    ```
    y en la API (`apps/api/.env.local`): `META_APP_SECRET=<App Secret>` (verifica las firmas de los callbacks), `NEXT_PUBLIC_SITE_URL=https://TU-WEB`.
-7. **Obtén un token** en *Tools → Graph API Explorer*: elige tu app, *User Token*, marca `pages_show_list`, `instagram_basic` (y `pages_read_engagement` si lees tus Páginas) y genera el token.
-8. **Verifícalo** con el script (no imprime el token):
+7. **Conecta con un clic (recomendado).** Con la web y la API corriendo, entra como administrador a `/admin/connections` y pulsa **Conectar con Meta**:
+   1. Facebook te pide autorizar los permisos → aceptas.
+   2. Turistero (en la **API**, con el App Secret) cambia el código por un token de larga duración (~60 días), detecta las **Páginas** que administras y su **cuenta de Instagram profesional**, y guarda todo **cifrado**.
+   3. Vuelves al panel con el resumen ("Conectado como …, Instagram: @…, vence el …"). Pulsa **Probar** para validar el token.
+   Requisitos: `AUTH_FACEBOOK_ID` (o `META_APP_ID`) en la web; `META_APP_ID`, `META_APP_SECRET` y `TOKEN_ENCRYPTION_KEY` en la API; y la URI `…/admin/connections/meta/callback` en *Valid OAuth Redirect URIs* (la pantalla te muestra la exacta). Los tokens caducan: Turistero te **avisa 7 días antes** (en *Mis fuentes → Novedades*) y basta con pulsar **Reconectar**.
+8. **Comprueba desde la terminal (opcional):**
    ```bash
    META_APP_ID=... META_APP_SECRET=... META_ACCESS_TOKEN=... npm run meta:check
+   npm run meta:check -- --ig-user-id 1784... --discover ronkonrolas   # prueba Business Discovery
    ```
-   Te dice si el token es válido, cuándo vence, qué permisos tiene, qué Páginas administras y **cuál es tu IG User ID**. Para probar Business Discovery contra una operadora:
-   ```bash
-   npm run meta:check -- --ig-user-id 1784... --discover ronkonrolas
-   ```
-9. **Cambia a token de larga duración** (~60 días) y guárdalo:
-   ```bash
-   META_APP_ID=... META_APP_SECRET=... npm run meta:token -- <token-corto>
-   ```
-   Pega el resultado en Turistero → `/admin/connections` (proveedor *instagram*, ID externo = tu IG User ID). Se guarda **cifrado**. Vuelve a repetir antes de los 60 días (la conexión mostrará "token vencido" si falla).
+9. **Alternativa manual** (si no quieres usar el botón): token del *Graph API Explorer* → `npm run meta:token -- <token-corto>` → pégalo en *Avanzado: pegar un token a mano* de `/admin/connections`.
 
 ## 5. Permisos y funciones que se piden
 Ver [`app-manifest.json`](app-manifest.json). Resumen:

@@ -42,7 +42,7 @@ describe("contraseñas", () => {
     expect(passwordProblems("solo-letras-abc")).toEqual([]); // 15+ caracteres: se acepta como frase
     expect(passwordProblems("sololetrasx")).not.toEqual([]); // 11 caracteres sin números
     expect(passwordProblems("contrasena123")).not.toEqual([]); // demasiado común
-    expect(passwordProblems("juanperez-2026-x", "juanperez@mail.com")).not.toEqual([]); // contiene el correo
+    expect(passwordProblems("juanperez-2026-x", "juanperez@example.com")).not.toEqual([]); // contiene el correo
     expect(passwordProblems("Buena-clave-2026")).toEqual([]);
     expect(passwordProblems("una frase muy larga y facil de recordar")).toEqual([]);
   });

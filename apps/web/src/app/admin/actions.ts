@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { zonedTimeToUtc } from "@turistero/config";
-import { adminFetch, attempt, flashHref, requireRole } from "@/lib/admin";
+import { ApiFailure, adminFetch, attempt, flashHref, requireRole } from "@/lib/admin";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const url = (f: FormData, k: string) => str(f, k) || null;
@@ -163,4 +163,15 @@ export async function createConnectionAction(f: FormData) {
 export async function deleteConnectionAction(f: FormData) {
   const u = await requireRole("ADMIN");
   done("/admin/connections", await attempt(() => adminFetch(u.id, `/connections/${str(f, "id")}`, { method: "DELETE" }), "Conexión eliminada"));
+}
+
+export async function testConnectionAction(f: FormData) {
+  const u = await requireRole("ADMIN");
+  let msg = "";
+  const r = await attempt(async () => {
+    const t = await adminFetch<{ valid: boolean; message: string; scopes: string[]; expiresAt: string | null }>(u.id, `/meta/connections/${str(f, "id")}/test`, { method: "POST" });
+    msg = t.valid ? `✅ ${t.message} Permisos: ${t.scopes.join(", ") || "—"}.` : `⚠ ${t.message}`;
+    if (!t.valid) throw new ApiFailure(200, "INVALID", msg);
+  }, "");
+  done("/admin/connections", r.kind === "ok" ? { msg, kind: "ok" } : r);
 }

@@ -6,32 +6,69 @@
     "contactEmail": "contacto@TU-DOMINIO",
     "privacyPolicyUrl": "https://TU-WEB/privacy",
     "termsOfServiceUrl": "https://TU-WEB/terms",
-    "userDataDeletion": { "type": "callback", "url": "https://TU-API/api/meta/data-deletion" },
-    "appDomains": ["TU-WEB", "TU-API"],
+    "userDataDeletion": {
+      "type": "callback",
+      "url": "https://TU-API/api/meta/data-deletion"
+    },
+    "appDomains": [
+      "TU-WEB",
+      "TU-API"
+    ],
     "iconSize": "1024x1024"
   },
   "products": {
     "facebookLogin": {
       "validOAuthRedirectUris": [
         "https://TU-WEB/api/auth/callback/facebook",
-        "http://localhost:3000/api/auth/callback/facebook"
+        "https://TU-WEB/admin/connections/meta/callback",
+        "http://localhost:3000/api/auth/callback/facebook",
+        "http://localhost:3000/admin/connections/meta/callback"
       ],
       "deauthorizeCallbackUrl": "https://TU-API/api/meta/deauthorize",
       "clientOAuthLogin": true,
       "webOAuthLogin": true,
       "enforceHttps": true
     },
-    "instagram": { "variant": "API with Facebook Login", "note": "Solo cuentas profesionales (Business/Creator)" }
+    "instagram": {
+      "variant": "API with Facebook Login",
+      "note": "Solo cuentas profesionales (Business/Creator)"
+    }
   },
   "permissions": {
-    "noReviewNeeded": ["public_profile"],
-    "requestInAppReview": ["email", "pages_show_list", "instagram_basic", "pages_read_engagement"],
-    "features": ["Page Public Content Access"],
-    "doNotRequest": ["user_posts", "user_friends", "user_likes", "pages_messaging", "publish_*"]
+    "noReviewNeeded": [
+      "public_profile"
+    ],
+    "requestInAppReview": [
+      "email",
+      "pages_show_list",
+      "instagram_basic",
+      "pages_read_engagement"
+    ],
+    "features": [
+      "Page Public Content Access"
+    ],
+    "doNotRequest": [
+      "user_posts",
+      "user_friends",
+      "user_likes",
+      "pages_messaging",
+      "publish_*"
+    ]
   },
   "environmentVariables": {
-    "web": ["AUTH_FACEBOOK_ID", "AUTH_FACEBOOK_SECRET", "NEXT_PUBLIC_SITE_URL"],
-    "api": ["META_APP_SECRET", "TOKEN_ENCRYPTION_KEY", "NEXT_PUBLIC_SITE_URL", "META_GRAPH_VERSION"]
+    "web": [
+      "AUTH_FACEBOOK_ID",
+      "AUTH_FACEBOOK_SECRET",
+      "META_APP_ID (opcional si ya defines AUTH_FACEBOOK_ID)",
+      "NEXT_PUBLIC_SITE_URL"
+    ],
+    "api": [
+      "META_APP_ID",
+      "META_APP_SECRET",
+      "TOKEN_ENCRYPTION_KEY",
+      "NEXT_PUBLIC_SITE_URL",
+      "META_GRAPH_VERSION"
+    ]
   },
   "policy": {
     "readsPerSourcePerDay": 1,

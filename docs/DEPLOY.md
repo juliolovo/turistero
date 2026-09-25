@@ -1,5 +1,7 @@
 # Despliegue: Neon (Postgres) + Vercel + GitHub Actions
 
+> **Para que una IA lo ejecute paso a paso:** [`AI-RUNBOOK.md`](AI-RUNBOOK.md). **Elegir base de datos (Neon o Supabase, con recomendación):** [`DATABASE.md`](DATABASE.md). **Seguridad y secretos:** [`../SECURITY.md`](../SECURITY.md).
+>
 > Esta guía **no despliega nada por sí sola**. Los pipelines ya existen en `.github/workflows/` pero el de despliegue está apagado hasta que actives `DEPLOY_ENABLED=true`.
 
 ## Arquitectura de producción

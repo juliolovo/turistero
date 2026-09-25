@@ -52,4 +52,4 @@ Requiere una cuenta de **Apple Developer Program** (de pago) y un dominio HTTPS 
 `ALLOW_DEV_LOGIN=1` (web) + `ALLOW_DEV_AUTH=1` (API) habilitan "Entrar como usuario de prueba" (el usuario `admin` es ADMIN si `ADMIN_EMAILS=admin@dev.local`). Se ignoran en producción.
 
 ## Primer administrador
-Define `ADMIN_EMAILS=tu-correo@gmail.com` en la API y entra con **Google/Apple** usando ese correo (verificado): tu usuario recibe ADMIN. Después gestiona roles en `/admin/users`.
+Define `ADMIN_EMAILS=tu-correo@example.com` en la API y entra con **Google/Apple** usando ese correo (verificado): tu usuario recibe ADMIN. Después gestiona roles en `/admin/users`.

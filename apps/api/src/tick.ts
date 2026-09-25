@@ -1,8 +1,8 @@
-import { gte } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 import { zonedParts } from "@turistero/config";
 import {
-  checkDecision, completeRun, createRun, listActiveSources, markScheduleRun, notify, recordCheck, sourceChecks, usersWithPrivateSources,
-  type Schedule, type SourceRow, type CheckDecision,
+  checkDecision, completeRun, connections, createRun, listActiveSources, markScheduleRun, notifications, notify, recordCheck, sourceChecks, usersWithPrivateSources,
+  type Db, type Schedule, type SourceRow, type CheckDecision,
 } from "@turistero/db";
 import { checkOne, isScanning, type DiscoveryDeps } from "./discovery";
 
@@ -24,6 +24,30 @@ export function userDue(now: Date, s: Schedule): boolean {
   if (!s.enabled) return false;
   if (!isDueToday(now, { timeZone: s.timezone, days: s.days, hour: s.hour, minute: s.minute })) return false;
   return !(s.lastRunAt && sameLocalDay(s.lastRunAt, now, s.timezone));
+}
+
+/**
+ * Avisa (una vez al día) cuando un token de Meta vence en menos de `days` días o ya venció, para reconectarlo a tiempo.
+ * Los tokens de larga duración duran ~60 días.
+ */
+export async function warnExpiringConnections(db: Db, now: Date, days = 7): Promise<number> {
+  const rows = await db.select().from(connections);
+  let sent = 0;
+  for (const c of rows) {
+    if (!c.expiresAt) continue;
+    const left = (c.expiresAt.getTime() - now.getTime()) / 86_400_000;
+    if (left > days) continue;
+    const tag = `connection:${c.id}`;
+    const since = new Date(now.getTime() - 20 * 3_600_000);
+    const recent = await db.select({ id: notifications.id }).from(notifications).where(and(eq(notifications.userId, c.userId), eq(notifications.sourceId, tag), gte(notifications.createdAt, since)));
+    if (recent.length) continue;
+    const msg = left <= 0
+      ? `⚠️ Tu conexión a Meta (${c.label ?? c.provider}) venció. Vuelve a conectarla en Administración → Conexiones Meta.`
+      : `⏳ Tu conexión a Meta (${c.label ?? c.provider}) vence en ${Math.ceil(left)} día(s). Reconéctala en Administración → Conexiones Meta.`;
+    await notify(db, c.userId, "INFO", msg, tag);
+    sent++;
+  }
+  return sent;
 }
 
 export interface TickSummary {
@@ -49,6 +73,7 @@ export async function runScheduledTick(deps: DiscoveryDeps, opts: { budgetMs?: n
   const { db } = deps;
   const now = (deps.now ?? (() => new Date()))();
   const t0 = Date.now();
+  await warnExpiringConnections(db, now).catch(() => 0);
 
   // Historial reciente de todas las fuentes en una sola consulta
   const since = new Date(now.getTime() - 48 * 3_600_000);

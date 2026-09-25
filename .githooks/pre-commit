@@ -1,0 +1,4 @@
+#!/bin/sh
+# Bloquea el commit si hay secretos o datos sensibles en lo que se va a confirmar.
+# Instalado por `npm install` (scripts/install-hooks.mjs). Saltarlo NO es una opcion: rota la credencial si ya se filtro.
+node scripts/check-secrets.mjs --staged || exit 1

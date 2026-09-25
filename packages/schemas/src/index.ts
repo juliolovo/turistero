@@ -240,3 +240,8 @@ export const scheduleSchema = z.object({
     }, "Zona horaria inválida")
     .optional(),
 });
+
+export const metaConnectSchema = z.object({
+  code: z.string().min(5).max(2000),
+  redirectUri: z.url({ protocol: /^https?$/ }).max(500),
+});

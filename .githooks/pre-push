@@ -1,0 +1,3 @@
+#!/bin/sh
+# Ultima barrera antes de subir: revisa todo lo versionado.
+node scripts/check-secrets.mjs --all || exit 1

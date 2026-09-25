@@ -14,13 +14,14 @@ import {
 } from "@turistero/db";
 import {
   candidateActionSchema, candidateCreateSchema, eventPatchSchema, eventQuerySchema, favoriteListQuerySchema, importSourcesSchema,
-  paginationSchema, runCreateSchema, scheduleSchema, registerSchema, loginSchema, mySourceCreateSchema, mySourcePatchSchema, subscriptionSchema, connectionCreateSchema, eventFromSchema, savedFilterCreateSchema, userRolePatchSchema, userSyncSchema, sourceCreateSchema, sourceListQuerySchema, sourcePatchSchema,
+  paginationSchema, runCreateSchema, metaConnectSchema, scheduleSchema, registerSchema, loginSchema, mySourceCreateSchema, mySourcePatchSchema, subscriptionSchema, connectionCreateSchema, eventFromSchema, savedFilterCreateSchema, userRolePatchSchema, userSyncSchema, sourceCreateSchema, sourceListQuerySchema, sourcePatchSchema,
 } from "@turistero/schemas";
 import { CATEGORIES, COUNTRIES, PLACES, FREE_EMOJI, NEW_EMOJI } from "@turistero/config";
 import { authenticate, requireRole, requireService } from "./auth";
 import { checkOne, candidatesFromContents, isScanning, persistCandidate, runDiscovery, type DiscoveryDeps } from "./discovery";
 import { runScheduledTick } from "./tick";
 import { registerMetaCallbacks } from "./meta-callbacks";
+import { connectMeta, testConnection } from "./meta-connect";
 import { contentFromText, contentFromUrl, createSafeFetcher, type SafeFetcher, type SourceAdapter } from "@turistero/discovery";
 import { HttpError, errorHandler, notFound, notFoundHandler } from "./http";
 
@@ -30,6 +31,8 @@ export interface AppOptions {
   serviceToken?: string;
   jwtSecret?: string;
   fetcher?: SafeFetcher;
+  /** fetch para hablar con la Graph API (inyectable en pruebas). */
+  metaFetch?: typeof fetch;
   adapters?: SourceAdapter[];
   now?: () => Date;
   adminEmails?: string[];
@@ -39,7 +42,7 @@ export interface AppOptions {
 
 const p = (v: string | string[] | undefined): string => (Array.isArray(v) ? v[0]! : (v ?? ""));
 
-export function createApp({ db, logger, serviceToken, jwtSecret, adminEmails = [], allowDevAuth = false, corsOrigins, fetcher, adapters, now }: AppOptions) {
+export function createApp({ db, logger, serviceToken, jwtSecret, adminEmails = [], allowDevAuth = false, corsOrigins, fetcher, metaFetch, adapters, now }: AppOptions) {
   const log = logger ?? pino({ level: process.env.LOG_LEVEL ?? "info" });
   const app = express();
   app.disable("x-powered-by");
@@ -114,6 +117,18 @@ export function createApp({ db, logger, serviceToken, jwtSecret, adminEmails = [
       out.push({ ...r, title: c.title, confidence: c.confidence, reasons: c.reasons });
     }
     res.status(201).json({ items: out });
+  });
+
+  /* ---------- "Conectar con Meta": OAuth -> token de larga duración -> Páginas + Instagram, todo cifrado ---------- */
+  api.post("/meta/connect", admin, async (req, res) => {
+    const b = metaConnectSchema.parse(req.body);
+    res.json(await connectMeta({ db, fetchImpl: metaFetch }, { userId: req.user!.id, code: b.code, redirectUri: b.redirectUri }));
+  });
+  api.post("/meta/connections/:id/test", admin, async (req, res) => {
+    res.json(await testConnection({ db, fetchImpl: metaFetch }, p(req.params.id)));
+  });
+  api.get("/meta/status", admin, (_req, res) => {
+    res.json({ configured: !!process.env.META_APP_ID && !!process.env.META_APP_SECRET && !!process.env.TOKEN_ENCRYPTION_KEY, graphVersion: process.env.META_GRAPH_VERSION ?? "v21.0" });
   });
 
   /* ---------- conexiones a Meta (tokens cifrados) ---------- */

@@ -3,7 +3,7 @@
 Agrega en un solo lugar los **viajes, tours y eventos** que publican tus operadoras y lugares favoritos (Facebook, Instagram, webs), sin tener que revisarlos uno a uno. Multi-país por diseño; Nicaragua (Managua, León…) es el catálogo semilla.
 
 > **Estado**: fases 1–7 implementadas más agenda personal, horarios por usuario, avisos, 5 métodos de acceso, Meta App documentada y pipelines. Lo que falta para producción real está en [Pendiente](#pendiente).
-> Guías: [`docs/DEPLOY.md`](docs/DEPLOY.md) (Neon + Vercel + GitHub) · [`docs/AUTH.md`](docs/AUTH.md) (proveedores de login) · [`meta-app/README.md`](meta-app/README.md) (Meta App: qué se puede y qué no, registro y App Review).
+> Guías: [`docs/AI-RUNBOOK.md`](docs/AI-RUNBOOK.md) (despliegue paso a paso para una IA) · [`docs/DATABASE.md`](docs/DATABASE.md) (Neon vs Supabase) · [`SECURITY.md`](SECURITY.md) (secretos y reglas) · [`docs/DEPLOY.md`](docs/DEPLOY.md) (Neon + Vercel + GitHub) · [`docs/AUTH.md`](docs/AUTH.md) (proveedores de login) · [`meta-app/README.md`](meta-app/README.md) (Meta App: qué se puede y qué no, registro y App Review).
 > Los eventos que ves con la semilla de desarrollo son **datos de ejemplo** (`isMock`): se rotulan “Ejemplo” en la UI, no se indexan y jamás enlazan a una publicación inventada.
 
 ## Principios (no negociables)

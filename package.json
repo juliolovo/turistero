@@ -12,14 +12,17 @@
     "dev": "npm run dev -w @turistero/web",
     "build": "npm run build -w @turistero/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present && node --test scripts/",
     "api": "npm run dev -w @turistero/api",
     "db:seed": "npm run seed -w @turistero/db",
     "e2e": "npm run e2e -w @turistero/e2e",
     "db:migrate": "npm run migrate -w @turistero/db",
     "db:generate": "npm run generate -w @turistero/db",
     "meta:check": "npm run check -w @turistero/meta-app --",
-    "meta:token": "npm run token -w @turistero/meta-app --"
+    "meta:token": "npm run token -w @turistero/meta-app --",
+    "prepare": "node scripts/install-hooks.mjs",
+    "secrets:check": "node scripts/check-secrets.mjs --all",
+    "secrets:history": "node scripts/check-secrets.mjs --all --history"
   },
   "engines": {
     "node": ">=20"

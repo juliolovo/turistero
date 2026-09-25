@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { auth, enabledProviders, signIn } from "@/auth";
 import { apiConfigured } from "@/lib/session-api";
+import { AppleIcon, FacebookIcon, GoogleIcon, MicrosoftIcon } from "@/components/brand-icons";
 
 export const metadata: Metadata = { title: "Entrar" };
 
@@ -15,11 +16,11 @@ const ERRORS: Record<string, string> = {
 };
 
 type Social = "google" | "facebook" | "microsoft-entra-id" | "apple";
-const SOCIAL: { id: Social; label: string }[] = [
-  { id: "google", label: "Continuar con Google" },
-  { id: "facebook", label: "Continuar con Meta (Facebook)" },
-  { id: "microsoft-entra-id", label: "Continuar con Microsoft" },
-  { id: "apple", label: "Continuar con Apple" },
+const SOCIAL: { id: Social; label: string; Icon: (p: { className?: string }) => React.ReactElement; env: string }[] = [
+  { id: "google", label: "Continuar con Google", Icon: GoogleIcon, env: "AUTH_GOOGLE_ID y AUTH_GOOGLE_SECRET" },
+  { id: "facebook", label: "Continuar con Meta (Facebook)", Icon: FacebookIcon, env: "AUTH_FACEBOOK_ID y AUTH_FACEBOOK_SECRET" },
+  { id: "microsoft-entra-id", label: "Continuar con Microsoft", Icon: MicrosoftIcon, env: "AUTH_MICROSOFT_ENTRA_ID_ID y AUTH_MICROSOFT_ENTRA_ID_SECRET" },
+  { id: "apple", label: "Continuar con Apple", Icon: AppleIcon, env: "AUTH_APPLE_ID y AUTH_APPLE_SECRET" },
 ];
 
 function safeCallback(v: string | undefined) {
@@ -31,7 +32,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
   const to = safeCallback(callbackUrl);
   if ((await auth())?.user) redirect(to);
 
-  const btn = "w-full rounded-full border border-ink/20 bg-white px-5 py-3 font-semibold text-ink transition hover:border-ink disabled:cursor-not-allowed disabled:opacity-50";
+  const btn = "flex w-full items-center justify-center gap-3 rounded-full border border-ink/20 bg-white px-5 py-3 font-semibold text-ink transition hover:border-ink disabled:cursor-not-allowed disabled:opacity-50";
   const off = (p: string) => !enabledProviders.includes(p);
 
   async function social(provider: Social) {
@@ -80,10 +81,13 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
         <p className="text-center text-sm text-cacao/70">o continúa con</p>
         {SOCIAL.map((s) => (
           <form key={s.id} action={social.bind(null, s.id)}>
-            <button disabled={off(s.id)} className={btn}>{s.label}</button>
+            <button disabled={off(s.id)} title={off(s.id) ? `Sin configurar: falta ${s.env}` : undefined} className={btn}>
+              <s.Icon className="size-5 shrink-0" />
+              {s.label}
+            </button>
+            {off(s.id) && <p className="mt-1 text-center text-xs text-cacao/60">Sin configurar — falta {s.env} (ver docs/AUTH.md)</p>}
           </form>
         ))}
-        {SOCIAL.some((s) => off(s.id)) && <p className="text-sm text-cacao/70">Los botones desactivados no tienen credenciales configuradas (ver README, sección Auth).</p>}
       </div>
       <p className="text-sm text-cacao/70">
         Instagram no se ofrece para iniciar sesión: la API de Meta solo admite cuentas profesionales. Podrás conectar una cuenta Business/Creator más adelante para leer contenido.

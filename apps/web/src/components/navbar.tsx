@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Heart, LogIn, LogOut, MapPinned } from "lucide-react";
 import { BRAND } from "@turistero/config";
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import { apiAs, apiConfigured } from "@/lib/session-api";
 
 const links = [
@@ -47,15 +47,9 @@ export async function Navbar() {
           )}
         </nav>
         {user ? (
-          <form
-            className="ml-auto flex items-center gap-2 md:ml-2"
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/" });
-            }}
-          >
+          <form className="ml-auto flex items-center gap-2 md:ml-2" action="/auth/logout" method="post">
             <span className="hidden max-w-32 truncate text-sm text-white/85 sm:inline" title={user.email ?? undefined}>{user.name ?? user.email}</span>
-            <button className="inline-flex items-center gap-2 rounded-full border border-white/30 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
+            <button type="submit" className="inline-flex items-center gap-2 rounded-full border border-white/30 px-4 py-2 text-sm font-semibold transition hover:bg-white/10">
               <LogOut className="size-4" aria-hidden />
               Salir
             </button>

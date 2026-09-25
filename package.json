@@ -30,6 +30,6 @@
     "test:pg": "node scripts/test-postgres.mjs"
   },
   "engines": {
-    "node": ">=24"
+    "node": "26.x"
   }
 }

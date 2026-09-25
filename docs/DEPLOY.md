@@ -116,3 +116,6 @@ Obtén los ids con `npx vercel link` dentro de cada app (archivo `.vercel/projec
 ## 9. Reversión
 - **Web/API:** en Vercel → *Deployments → Promote to Production* sobre un despliegue anterior.
 - **Base de datos:** las migraciones son aditivas; para volver atrás usa una rama/restauración de Neon a un punto anterior y redepliega la versión previa.
+
+## Versión de Node en Vercel
+`engines.node` es `26.x` en `package.json`, `apps/api` y `apps/web`, y Vercel la respeta. Si al desplegar Vercel rechaza 26 (⚠️ verifica que su lista de runtimes ya lo incluya), cambia `engines` a `24.x` (LTS) en esos tres archivos.

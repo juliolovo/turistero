@@ -31,7 +31,7 @@ docs/                  DEPLOY.md, AUTH.md      .github/workflows  CI, deploy (ap
 Decisiones: **Drizzle** (ligero, SQL-first, Neon) · **PGlite** en dev/tests y Postgres real con `DATABASE_URL` (mismo esquema y migraciones) · web y API separados, la web firma un JWT de 2 min para hablar con la API en nombre del usuario y **el rol se lee siempre de la BD** · npm workspaces (sin pnpm).
 
 ## Requisitos y ejecución local
-Node ≥ 24 (LTS; probado con 24 y 26) y npm. Postgres 18 (Docker) para las pruebas reales. No necesitas Postgres para desarrollar.
+Node 26 (Vercel usa `engines.node` = 26.x; el CI también prueba la LTS 24) y npm. Postgres 18 (Docker) para las pruebas reales. No necesitas Postgres para desarrollar.
 ```bash
 npm install
 npm run api        # API en :4000 (PGlite + semilla de fuentes y eventos de ejemplo; lee apps/api/.env.local)

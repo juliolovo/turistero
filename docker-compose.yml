@@ -1,5 +1,5 @@
 # Postgres LOCAL para desarrollo y pruebas (nunca para producción).
-#   npm run db:up      levanta el contenedor y crea la BD + los dos roles
+#   npm run db:up      levanta el contenedor y crea la BD + los tres roles
 #   npm run db:reset   lo destruye y lo vuelve a crear desde cero
 #
 # Las contraseñas de abajo son valores por defecto SOLO para este contenedor local, que escucha únicamente en 127.0.0.1.
@@ -16,6 +16,8 @@ services:
       POSTGRES_DB: ${DB_NAME:-turistero_db_dev}
       ADMIN_DB_USER: ${ADMIN_DB_USER:-turistero_admin_usr}
       ADMIN_DB_PASSWORD: ${ADMIN_DB_PASSWORD:-turistero_admin_pwd}
+      MIGRATOR_DB_USER: ${MIGRATOR_DB_USER:-turistero_migrator_usr}
+      MIGRATOR_DB_PASSWORD: ${MIGRATOR_DB_PASSWORD:-turistero_migrator_pwd}
       APP_DB_USER: ${APP_DB_USER:-turistero_app_usr}
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:-turistero_app_pwd}
     ports:

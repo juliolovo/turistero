@@ -2,19 +2,20 @@
 
 Turistero necesita **Postgres estándar** y nada más (Drizzle ORM + cliente `postgres`). No usa Supabase Auth/Storage/Realtime: el login lo hace Auth.js y los tokens de Meta se cifran en nuestra propia tabla. Por eso local, Neon y Supabase funcionan igual: solo cambian las URLs.
 
-## Modelo de permisos (dos roles, menor privilegio)
+## Modelo de permisos (tres roles, menor privilegio)
 | Rol | Nombre local | Puede | No puede | Dónde se usa |
 |---|---|---|---|---|
-| **Administrador** | `turistero_admin_usr` | Crear/alterar/eliminar tablas; ejecutar migraciones; es dueño de la BD | — | **Solo** `npm run db:migrate` / `db:seed` y el pipeline de despliegue. Variable `DATABASE_ADMIN_URL` |
+| **Administrador** | `turistero_admin_usr` | Ser dueño de la BD y del esquema `public`; crear roles y otorgar permisos (se usa 1 vez al preparar y para rotar contraseñas) | — | Solo tareas manuales. Variable `DATABASE_ADMIN_URL`. **No** va en CI ni en Vercel |
+| **Migrador** | `turistero_migrator_usr` | Crear/alterar/eliminar tablas del esquema `public` y aplicar migraciones; sus tablas quedan usables por la app | Crear/alterar roles · cambiar permisos de otros roles · crear bases de datos · conectarse a otras bases · ser dueño de la BD | `npm run db:migrate` / `db:seed` y el pipeline de despliegue. Variable `DATABASE_MIGRATOR_URL` |
 | **Aplicación** | `turistero_app_usr` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` sobre las tablas y usar secuencias | Crear, alterar o eliminar tablas · `TRUNCATE` · crear esquemas, roles o bases de datos · ver el historial de migraciones (`drizzle`) · conectarse a otras bases | La API en runtime. Variable `DATABASE_URL` |
 
 Así, si la API se compromete (inyección SQL, secreto filtrado), el atacante **no puede borrar ni alterar el esquema**. La web nunca toca la BD.
-Los scripts que crean los roles están en [`packages/db/sql/`](../packages/db/sql) (`01-admin-role.sql`, `02-app-role.sql`) y son los mismos en local y en Neon/Supabase; hay pruebas automáticas que verifican todo lo anterior (`packages/db/src/roles.test.ts`).
+Los scripts que crean los roles están en [`packages/db/sql/`](../packages/db/sql) (`01-admin-role.sql`, `02-app-role.sql`, `03-migrator-role.sql`) y son los mismos en local y en Neon/Supabase; hay pruebas automáticas que verifican todo lo anterior (`packages/db/src/roles.test.ts`).
 
 ## 1) Local con Docker (desarrollo y pruebas)
 Requisitos: Docker. Base de datos `turistero_db_dev` en un Postgres 18 que escucha **solo en 127.0.0.1:5433** (no 5432, para no chocar con un Postgres que ya tengas).
 ```bash
-npm run db:up        # levanta el contenedor; la 1.ª vez crea la BD y los dos roles
+npm run db:up        # levanta el contenedor; la 1.ª vez crea la BD y los tres roles
 npm run db:reset     # lo destruye y lo recrea desde cero (borra los datos locales)
 npm run db:psql      # consola psql como superusuario del contenedor
 npm run db:down      # lo apaga (los datos se conservan en el volumen)
@@ -24,12 +25,13 @@ Credenciales **solo locales** (definidas en `docker-compose.yml`; no reutilices 
 | Rol | Usuario | Contraseña |
 |---|---|---|
 | Superusuario del contenedor | `postgres` | `turistero_postgres_pwd` |
-| Administrador (DDL) | `turistero_admin_usr` | `turistero_admin_pwd` |
+| Administrador (dueño, roles) | `turistero_admin_usr` | `turistero_admin_pwd` |
+| Migrador (solo migraciones) | `turistero_migrator_usr` | `turistero_migrator_pwd` |
 | Aplicación (solo filas) | `turistero_app_usr` | `turistero_app_pwd` |
 
 ```bash
-# Migrar y cargar el catálogo como ADMINISTRADOR (la app no puede crear tablas)
-export DATABASE_ADMIN_URL="postgres://turistero_admin_usr:turistero_admin_pwd@127.0.0.1:5433/turistero_db_dev"
+# Migrar y cargar el catálogo como MIGRADOR (la app no puede crear tablas)
+export DATABASE_MIGRATOR_URL="postgres://turistero_migrator_usr:turistero_migrator_pwd@127.0.0.1:5433/turistero_db_dev"
 npm run db:migrate && npm run db:seed          # (db:seed -- --mocks añade eventos de ejemplo)
 
 # Ejecutar la API como el rol de la APLICACIÓN: en apps/api/.env.local
@@ -68,19 +70,23 @@ Elige Supabase solo si ya lo usas para otra cosa. Cambiar después es un `pg_dum
    APP_PWD=$(openssl rand -base64 32 | tr -d '/+=' | cut -c1-32)   # contraseña larga y aleatoria; guárdala en tu gestor
    psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -v db=neondb -v admin_role=neondb_owner \
         -v app_role=turistero_app_usr -v app_pwd="$APP_PWD" -f packages/db/sql/02-app-role.sql
+   MIGRATOR_PWD=$(openssl rand -base64 32 | tr -d '/+=' | cut -c1-32)   # ídem
+   psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -v db=neondb -v admin_role=neondb_owner -v app_role=turistero_app_usr \
+        -v migrator_role=turistero_migrator_usr -v migrator_pwd="$MIGRATOR_PWD" -f packages/db/sql/03-migrator-role.sql
    ```
-4. Migra y carga el catálogo como administrador: `DATABASE_ADMIN_URL="$ADMIN_URL" npm run db:migrate && DATABASE_ADMIN_URL="$ADMIN_URL" npm run db:seed`.
+4. Arma la URL directa del migrador (`turistero_migrator_usr` / `$MIGRATOR_PWD`, host sin `-pooler`) → `DATABASE_MIGRATOR_URL`. Migra y carga el catálogo con ella: `npm run db:migrate && npm run db:seed`. (Si ya migraste con `neondb_owner`, traspasa antes las tablas y el esquema `drizzle` al migrador con `ALTER ... OWNER TO`.)
 5. Arma la URL de la app: la **con pooler** de Neon, cambiando usuario y contraseña por `turistero_app_usr` / `$APP_PWD` → es la `DATABASE_URL` de la **API en Vercel**. Vuelve a ejecutar `02-app-role.sql` después de futuras migraciones **no** hace falta (los permisos por defecto cubren las tablas nuevas).
 6. Comprueba los permisos: `DATABASE_URL="<url app>" node -e "…"` o ejecuta `roles.test.ts` apuntando `TEST_ADMIN_DATABASE_URL`/`TEST_APP_DATABASE_URL` a esa base (⚠️ crea y borra una tabla temporal; úsalo antes de tener datos reales).
 
 ### Supabase (alternativa)
-El rol `postgres` hace de administrador; crea `turistero_app_usr` con el mismo `02-app-role.sql` (`admin_role=postgres`, `db=postgres`). Para la URL de la app usa el *Transaction pooler* (⚠️ el usuario lleva el formato `turistero_app_usr.<project-ref>`; confírmalo en *Connect*).
+El rol `postgres` hace de administrador; crea `turistero_app_usr` y `turistero_migrator_usr` con los mismos `02-app-role.sql` y `03-migrator-role.sql` (`admin_role=postgres`, `db=postgres`). Para la URL de la app usa el *Transaction pooler* (⚠️ el usuario lleva el formato `turistero_app_usr.<project-ref>`; confírmalo en *Connect*).
 
 ## Dónde va cada variable
 | Variable | Valor | Dónde |
 |---|---|---|
 | `DATABASE_URL` | **rol de la aplicación**, con pooler | API (Vercel) · `apps/api/.env.local` |
-| `DATABASE_ADMIN_URL` | rol administrador, conexión directa | **solo** GitHub Actions (secreto) y tu terminal al migrar. **Nunca** en Vercel |
+| `DATABASE_MIGRATOR_URL` | rol migrador, conexión directa | **solo** GitHub Actions (secreto) y tu terminal al migrar. **Nunca** en Vercel |
+| `DATABASE_ADMIN_URL` | rol administrador, conexión directa | solo tu terminal, para crear roles/permisos. **Nunca** en Vercel ni en CI |
 | `TEST_DATABASE_URL` | superusuario local (CREATEDB) | solo pruebas locales |
 Son secretos: viven en Vercel/GitHub Secrets o en `.env.local`, jamás en Git (el detector lo impide; ver `SECURITY.md`).
 

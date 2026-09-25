@@ -45,12 +45,15 @@ Sigue `docs/DATABASE.md`. Modelo: **`neondb_owner` (o `postgres` en Supabase) = 
    APP_PWD=$(openssl rand -base64 32 | tr -d '/+=' | cut -c1-32)
    psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -v db=<neondb|postgres> -v admin_role=<neondb_owner|postgres> \
         -v app_role=turistero_app_usr -v app_pwd="$APP_PWD" -f packages/db/sql/02-app-role.sql
+   MIGRATOR_PWD=$(openssl rand -base64 32 | tr -d '/+=' | cut -c1-32)
+   psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -v db=<neondb|postgres> -v admin_role=<neondb_owner|postgres> -v app_role=turistero_app_usr \
+        -v migrator_role=turistero_migrator_usr -v migrator_pwd="$MIGRATOR_PWD" -f packages/db/sql/03-migrator-role.sql
    ```
-4. 🤖 Migra y carga el catálogo **como administrador**: `DATABASE_ADMIN_URL="$ADMIN_URL" npm run db:migrate && DATABASE_ADMIN_URL="$ADMIN_URL" npm run db:seed` (sin `--mocks`).
+4. 🤖 Arma `DATABASE_MIGRATOR_URL` (URL directa, usuario `turistero_migrator_usr` y `$MIGRATOR_PWD`) en una variable de shell sin imprimirla y migra **como migrador**: `npm run db:migrate && npm run db:seed` (sin `--mocks`).
 5. 🤖 Arma la `DATABASE_URL` de la **aplicación** (URL del pooler con usuario `turistero_app_usr` y `$APP_PWD`) en una variable de shell `DATABASE_URL` **sin imprimirla** (el paso 6 la envía a Vercel).
-6. ✅ Verifica permisos sin imprimir secretos: `TEST_ADMIN_DATABASE_URL="$ADMIN_URL" TEST_APP_DATABASE_URL="$DATABASE_URL" npm run test -w @turistero/db` → 7 pruebas en verde (⚠️ crea y borra una tabla temporal: hazlo antes de tener datos reales).
-7. 🧑 Guarda `$APP_PWD` y la URL del administrador en su gestor de contraseñas (no pasan por el chat). Para GitHub Actions: `gh secret set DATABASE_ADMIN_URL` (entrada oculta).
-8. 🤖 Al terminar: `unset ADMIN_URL APP_PWD` (y `DATABASE_URL` después del paso 6 de la sección siguiente).
+6. ✅ Verifica permisos sin imprimir secretos: `TEST_ADMIN_DATABASE_URL="$ADMIN_URL" TEST_MIGRATOR_DATABASE_URL="$DATABASE_MIGRATOR_URL" TEST_APP_DATABASE_URL="$DATABASE_URL" npm run test -w @turistero/db` → 7 pruebas en verde (⚠️ crea y borra una tabla temporal: hazlo antes de tener datos reales).
+7. 🧑 Guarda `$APP_PWD`, `$MIGRATOR_PWD` y la URL del administrador en su gestor de contraseñas (no pasan por el chat). Para GitHub Actions: `gh secret set DATABASE_MIGRATOR_URL` (entrada oculta).
+8. 🤖 Al terminar: `unset ADMIN_URL APP_PWD MIGRATOR_PWD DATABASE_MIGRATOR_URL` (y `DATABASE_URL` después del paso 6 de la sección siguiente).
 
 ## 5. Vercel: dos proyectos del mismo repositorio
 🧑 En Vercel: *Add New → Project* → importa `github.com/<usuario>/turistero` **dos veces**:

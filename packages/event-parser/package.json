@@ -7,5 +7,5 @@
   "types": "src/index.ts",
   "scripts": { "test": "vitest run" },
   "dependencies": { "@turistero/config": "*", "@turistero/types": "*", "cheerio": "^1.2.0" },
-  "devDependencies": { "vitest": "^5.0.1" }
+  "devDependencies": { "vitest": "^5.0.2" }
 }

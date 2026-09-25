@@ -31,7 +31,7 @@ docs/                  DEPLOY.md, AUTH.md      .github/workflows  CI, deploy (ap
 Decisiones: **Drizzle** (ligero, SQL-first, Neon) · **PGlite** en dev/tests y Postgres real con `DATABASE_URL` (mismo esquema y migraciones) · web y API separados, la web firma un JWT de 2 min para hablar con la API en nombre del usuario y **el rol se lee siempre de la BD** · npm workspaces (sin pnpm).
 
 ## Requisitos y ejecución local
-Node ≥ 20 (probado con 26) y npm. No necesitas Postgres para desarrollar.
+Node ≥ 24 (LTS; probado con 24 y 26) y npm. Postgres 18 (Docker) para las pruebas reales. No necesitas Postgres para desarrollar.
 ```bash
 npm install
 npm run api        # API en :4000 (PGlite + semilla de fuentes y eventos de ejemplo; lee apps/api/.env.local)
@@ -119,7 +119,7 @@ Auth de la API: `Bearer $API_SERVICE_TOKEN` (servidor a servidor), `Bearer <JWT>
 
 ## Pruebas
 - `npm test`: **config**, **event-parser** (fechas, precios, clasificación, deduplicación, HTML, extracción), **discovery** (fetch seguro/SSRF/robots, adaptadores, Graph API simulada), **API** (integración: eventos, fuentes, auth/JWT/roles, discovery de punta a punta, cron, conexiones cifradas, "Conectar con Meta"), **meta-app** (scripts) y el **detector de secretos**. Sin configuración usa PGlite en memoria.
-- `npm run test:pg`: las pruebas de **permisos de roles** y **toda la API contra Postgres 16 real** (Docker; ver `docs/DATABASE.md`).
+- `npm run test:pg`: las pruebas de **permisos de roles** y **toda la API contra Postgres 18 real** (Docker; ver `docs/DATABASE.md`).
 - `npm run e2e`: Playwright con Chrome (home, paginación, filtros, búsqueda, lista/cards, detalle, login y registro, favoritos, mis fuentes/horario, admin, "Conectar con Meta" con Graph API simulada, móvil, teclado) y **accesibilidad automática (axe-core, WCAG AA)** en las pantallas principales.
 - CI (`.github/workflows/`): typecheck, tests, build, Postgres real, E2E y escaneo de secretos del historial; validado con `actionlint`.
 

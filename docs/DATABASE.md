@@ -12,7 +12,7 @@ Así, si la API se compromete (inyección SQL, secreto filtrado), el atacante **
 Los scripts que crean los roles están en [`packages/db/sql/`](../packages/db/sql) (`01-admin-role.sql`, `02-app-role.sql`) y son los mismos en local y en Neon/Supabase; hay pruebas automáticas que verifican todo lo anterior (`packages/db/src/roles.test.ts`).
 
 ## 1) Local con Docker (desarrollo y pruebas)
-Requisitos: Docker. Base de datos `turistero_db_dev` en un Postgres 16 que escucha **solo en 127.0.0.1:5433** (no 5432, para no chocar con un Postgres que ya tengas).
+Requisitos: Docker. Base de datos `turistero_db_dev` en un Postgres 18 que escucha **solo en 127.0.0.1:5433** (no 5432, para no chocar con un Postgres que ya tengas).
 ```bash
 npm run db:up        # levanta el contenedor; la 1.ª vez crea la BD y los dos roles
 npm run db:reset     # lo destruye y lo recrea desde cero (borra los datos locales)
@@ -40,7 +40,7 @@ Sin `DATABASE_URL`, la API usa PGlite (Postgres embebido en memoria) y se migra 
 
 ### Probar contra Postgres real
 ```bash
-npm run test:pg      # levanta el contenedor y corre: pruebas de permisos de roles + toda la suite de la API contra Postgres 16
+npm run test:pg      # levanta el contenedor y corre: pruebas de permisos de roles + toda la suite de la API contra Postgres 18
 ```
 Cada archivo de pruebas de la API crea una base de datos efímera (`turistero_test_xxxx`) con `TEST_DATABASE_URL` y la elimina al terminar (ver `packages/db/src/testing.ts`). `npm test` (sin variables) usa PGlite y omite las pruebas de roles.
 

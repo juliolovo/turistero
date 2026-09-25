@@ -8,5 +8,5 @@
     "token": "node scripts/long-lived-token.mjs",
     "test": "vitest run"
   },
-  "devDependencies": { "vitest": "^5.0.1" }
+  "devDependencies": { "vitest": "^5.0.2" }
 }

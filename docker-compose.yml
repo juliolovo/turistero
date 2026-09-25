@@ -7,7 +7,7 @@
 # Puedes sobrescribirlas con un archivo `.env` junto a este (ignorado por Git).
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: turistero-postgres
     restart: unless-stopped
     environment:
@@ -21,7 +21,8 @@ services:
     ports:
       - "127.0.0.1:${PG_PORT:-5433}:5432" # solo accesible desde tu máquina
     volumes:
-      - turistero_pgdata:/var/lib/postgresql/data
+      # Postgres 18+ guarda los datos en /var/lib/postgresql/<versión>/docker: se monta el directorio padre
+      - turistero_pgdata:/var/lib/postgresql
       - ./packages/db/sql:/sql:ro
       - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:

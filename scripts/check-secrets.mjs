@@ -154,7 +154,13 @@ export function scanHistory() {
     if (allowedPath(f)) continue;
     const why = isForbiddenPath(f);
     if (why) out.push({ file: `${f} (commit ${c})`, line: 0, rule: `archivo prohibido en el historial: ${why}`, snippet: "" });
-    else for (const x of scanText(f, added.join("\n"))) out.push({ file: `${f} (commit ${c})`, ...x });
+    else {
+      for (const x of scanText(f, added.join("\n"))) {
+        // Falsos positivos históricos ya revisados (un commit no se edita sin reescribir el historial): ver secret-scan.config.json
+        const known = (CONFIG.historyAllow ?? []).some((a) => c.startsWith(a.commit) && a.file === f && x.rule.startsWith(a.rule));
+        if (!known) out.push({ file: `${f} (commit ${c})`, ...x });
+      }
+    }
   }
   return out;
 }
